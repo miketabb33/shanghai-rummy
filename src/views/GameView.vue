@@ -21,7 +21,7 @@ const props = defineProps({
 const {
   myHand, newCardIndices, isMyTurn, activePlayerId, canBuy,
   drawFromDeck, takeTopDiscard, discardCard,
-  buy, advanceTurn, layDownContract, layOff,
+  buy, advanceTurn, layDownContract, layOff, endGame,
 } = useGame(
   computed(() => props.game),
   computed(() => props.gameId),
@@ -31,6 +31,9 @@ const {
 const selectedIndex = ref(null)
 const showContractModal = ref(false)
 const showScores = ref(false)
+const confirmEndGame = ref(false)
+
+const isHost = computed(() => props.game.hostId === props.playerId)
 
 const topDiscard = computed(() => {
   const d = props.game.discard
@@ -147,6 +150,21 @@ async function handleContractConfirm(groupIndices) {
       :playerId="playerId"
     />
 
+    <!-- Host: end game -->
+    <Transition name="fade">
+      <div v-if="confirmEndGame" class="end-backdrop" @click.self="confirmEndGame = false">
+        <div class="end-dialog">
+          <p>End the game for everyone?</p>
+          <div class="end-actions">
+            <button class="end-confirm" @click="endGame">End Game</button>
+            <button class="end-cancel" @click="confirmEndGame = false">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
+    <button v-if="isHost" class="end-game-btn" @click="confirmEndGame = true">End Game</button>
+
     <!-- Mobile only: bottom sheet -->
     <Transition name="fade">
       <div v-if="showScores" class="drawer-backdrop" @click="showScores = false" />
@@ -247,6 +265,91 @@ async function handleContractConfirm(groupIndices) {
     padding: 0;
   }
 }
+
+.end-game-btn {
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  padding: 7px 14px;
+  background: transparent;
+  border: 1.5px solid rgba(192, 57, 43, 0.35);
+  border-radius: 10px;
+  color: rgba(192, 57, 43, 0.6);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  z-index: 30;
+  transition: all 0.15s;
+}
+.end-game-btn:hover {
+  border-color: #c0392b;
+  color: #c0392b;
+  background: #fdf0ee;
+}
+
+.end-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(26,26,46,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 110;
+}
+
+.end-dialog {
+  background: #fff;
+  border-radius: 14px;
+  padding: 28px 28px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: min(320px, 90vw);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+}
+
+.end-dialog p {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.15rem;
+  color: #1a1a2e;
+  margin: 0;
+  text-align: center;
+}
+
+.end-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.end-confirm {
+  flex: 1;
+  padding: 10px;
+  background: #c0392b;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.end-confirm:hover { background: #a93226; }
+
+.end-cancel {
+  flex: 1;
+  padding: 10px;
+  background: #f5efe6;
+  color: #555;
+  border: none;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.end-cancel:hover { background: #ede8e0; }
 
 .fade-enter-active, .fade-leave-active { transition: opacity 0.25s ease; }
 .fade-enter-from, .fade-leave-to       { opacity: 0; }

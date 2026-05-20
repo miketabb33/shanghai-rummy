@@ -160,5 +160,9 @@ export function useGame(game, gameId, playerId) {
     })
   }
 
-  return { myHand, newCardIndices, isMyTurn, activePlayerId, canBuy, drawFromDeck, takeTopDiscard, discardCard, buy, advanceTurn, layDownContract, layOff }
+  async function endGame() {
+    await updateDoc(gameRef(), { status: 'finished' })
+  }
+
+  return { myHand, newCardIndices, isMyTurn, activePlayerId, canBuy, drawFromDeck, takeTopDiscard, discardCard, buy, advanceTurn, layDownContract, layOff, endGame }
 }

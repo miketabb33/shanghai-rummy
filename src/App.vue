@@ -1,10 +1,22 @@
 <script setup>
+import { ref } from 'vue'
 import { useLobby } from './composables/useLobby'
 import LobbyView from './views/LobbyView.vue'
 import GameView from './views/GameView.vue'
 import GameOverView from './views/GameOverView.vue'
 
-const { gameId, playerId, game, createGame, joinGame, startGame, cancelGame } = useLobby()
+const { gameId, playerId, game, createGame, joinGame, startGame, cancelGame, leaveGame } = useLobby()
+
+const joinError = ref(null)
+
+async function handleJoin(id, playerName) {
+  joinError.value = null
+  try {
+    await joinGame(id, playerName)
+  } catch (e) {
+    joinError.value = e.message
+  }
+}
 </script>
 
 <template>
@@ -13,8 +25,9 @@ const { gameId, playerId, game, createGame, joinGame, startGame, cancelGame } = 
     :gameId="gameId"
     :playerId="playerId"
     :game="game"
+    :joinError="joinError"
     @create="createGame"
-    @join="joinGame"
+    @join="handleJoin"
     @start="startGame"
     @cancel="cancelGame"
   />
@@ -30,5 +43,6 @@ const { gameId, playerId, game, createGame, joinGame, startGame, cancelGame } = 
     v-else-if="game.status === 'finished'"
     :game="game"
     :playerId="playerId"
+    @leave="leaveGame"
   />
 </template>

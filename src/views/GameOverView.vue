@@ -5,6 +5,7 @@ const props = defineProps({
   game: Object,
   playerId: String,
 })
+const emit = defineEmits(['leave'])
 
 const standings = computed(() => {
   return props.game.playerOrder
@@ -61,6 +62,8 @@ const winner = computed(() => standings.value[0])
           </tbody>
         </table>
       </details>
+
+      <button class="btn-leave" @click="emit('leave')">Back to Lobby</button>
     </div>
   </div>
 </template>
@@ -160,6 +163,22 @@ const winner = computed(() => standings.value[0])
   font-weight: 700;
   color: #1a1a2e;
 }
+
+.btn-leave {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 20px;
+  background: #1a1a2e;
+  color: #e8c26a;
+  border: none;
+  border-radius: 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-leave:hover { background: #2d2d50; }
 
 .round-breakdown {
   text-align: left;

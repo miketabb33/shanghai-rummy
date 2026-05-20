@@ -5,6 +5,7 @@ import {
   setDoc,
   updateDoc,
   deleteDoc,
+  getDoc,
   onSnapshot,
   serverTimestamp,
   arrayUnion,
@@ -95,6 +96,10 @@ export function useLobby() {
   }
 
   async function joinGame(id, playerName) {
+    const snap = await getDoc(doc(db, 'games', id))
+    if (!snap.exists()) throw new Error('Game not found')
+    if (snap.data().status !== 'lobby') throw new Error('Game already started')
+
     const pid = generatePlayerId()
     playerId.value = pid
 
@@ -135,9 +140,17 @@ export function useLobby() {
     clearSession()
   }
 
+  function leaveGame() {
+    unsubscribe?.()
+    gameId.value = null
+    playerId.value = null
+    game.value = null
+    clearSession()
+  }
+
   function cleanup() {
     unsubscribe?.()
   }
 
-  return { gameId, playerId, game, createGame, joinGame, startGame, cancelGame, cleanup }
+  return { gameId, playerId, game, createGame, joinGame, startGame, cancelGame, leaveGame, cleanup }
 }
