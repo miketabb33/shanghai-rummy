@@ -2,12 +2,13 @@ import { computed, ref } from 'vue'
 import { db } from '../firebase'
 import { doc, updateDoc, runTransaction, serverTimestamp } from 'firebase/firestore'
 import { endRound } from './useRoundEnd'
+import { getRound } from './useRounds'
 
 export const BUY_WINDOW_MS = 6000
 
 export function useGame(game, gameId, playerId) {
   const myHand = computed(() => game.value?.hands?.[playerId.value] ?? [])
-  const drawnCardIndex = ref(null)
+  const newCardIndices = ref([])
 
   const activePlayerId = computed(() =>
     game.value ? game.value.playerOrder[game.value.activePlayerIndex] : null
@@ -28,7 +29,7 @@ export function useGame(game, gameId, playerId) {
   async function drawFromDeck() {
     const deck = [...game.value.deck]
     const card = deck.pop()
-    drawnCardIndex.value = myHand.value.length
+    newCardIndices.value = [myHand.value.length]
     await updateDoc(gameRef(), {
       deck,
       [`hands.${playerId.value}`]: [...myHand.value, card],
@@ -39,7 +40,7 @@ export function useGame(game, gameId, playerId) {
   async function takeTopDiscard() {
     const discard = [...game.value.discard]
     const card = discard.pop()
-    drawnCardIndex.value = myHand.value.length
+    newCardIndices.value = [myHand.value.length]
     await updateDoc(gameRef(), {
       discard,
       [`hands.${playerId.value}`]: [...myHand.value, card],
@@ -77,6 +78,9 @@ export function useGame(game, gameId, playerId) {
       const deck = [...data.deck]
       const penaltyCard = deck.pop()
 
+      const currentHandLength = data.hands[pid].length
+      newCardIndices.value = [currentHandLength, currentHandLength + 1]
+
       tx.update(gameRef(), {
         discard,
         deck,
@@ -93,13 +97,32 @@ export function useGame(game, gameId, playerId) {
     const pid = playerId.value
     const hand = myHand.value
     const allIndices = new Set(groupIndices.flat())
-    const groups = groupIndices.map(indices => indices.map(i => hand[i]))
+    const roundGroups = getRound(game.value.round).groups
+    const melds = groupIndices.map((indices, i) => ({
+      type: roundGroups[i].type,
+      cards: indices.map(idx => hand[idx]),
+    }))
     const newHand = hand.filter((_, i) => !allIndices.has(i))
 
     await updateDoc(gameRef(), {
       [`hands.${pid}`]: newHand,
-      [`melds.${pid}`]: groups,
+      [`melds.${pid}`]: melds,
       [`players.${pid}.contractLaid`]: true,
+    })
+  }
+
+  async function layOff(handIndex, targetPid, groupIndex) {
+    const pid = playerId.value
+    const hand = [...myHand.value]
+    const [card] = hand.splice(handIndex, 1)
+
+    const melds = game.value.melds[targetPid].map((group, i) =>
+      i === groupIndex ? { ...group, cards: [...group.cards, card] } : group
+    )
+
+    await updateDoc(gameRef(), {
+      [`hands.${pid}`]: hand,
+      [`melds.${targetPid}`]: melds,
     })
   }
 
@@ -116,5 +139,5 @@ export function useGame(game, gameId, playerId) {
     })
   }
 
-  return { myHand, drawnCardIndex, isMyTurn, activePlayerId, canBuy, drawFromDeck, takeTopDiscard, discardCard, buy, advanceTurn, layDownContract }
+  return { myHand, newCardIndices, isMyTurn, activePlayerId, canBuy, drawFromDeck, takeTopDiscard, discardCard, buy, advanceTurn, layDownContract, layOff }
 }

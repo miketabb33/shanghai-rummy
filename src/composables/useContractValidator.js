@@ -39,3 +39,9 @@ export function isValidContract(groupCardArrays, contractDef) {
   if (groupCardArrays.length !== contractDef.groups.length) return false
   return groupCardArrays.every((cards, i) => isValidGroup(cards, contractDef.groups[i]))
 }
+
+// meldGroup is { type: 'set'|'run', cards: [...] }
+export function canLayOffOnGroup(card, meldGroup) {
+  const combined = [...meldGroup.cards, card]
+  return meldGroup.type === 'set' ? isValidSet(combined) : isValidRun(combined)
+}

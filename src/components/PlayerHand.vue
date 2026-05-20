@@ -11,7 +11,7 @@ const props = defineProps({
   phase: String,
   isMyTurn: Boolean,
   contractLaid: Boolean,
-  drawnCardIndex: { type: Number, default: null },
+  newCardIndices: { type: Array, default: () => [] },
 })
 const emit = defineEmits(['select', 'discard', 'lay-contract'])
 
@@ -50,10 +50,10 @@ function handleCardClick(originalIndex) {
           :card="card"
           :selected="selectedIndex === originalIndex"
           :interactive="canSelect()"
-          :class="{ 'just-drawn': originalIndex === drawnCardIndex }"
+          :class="{ 'just-drawn': newCardIndices.includes(originalIndex) }"
           @click="handleCardClick(originalIndex)"
         />
-        <span v-if="originalIndex === drawnCardIndex" class="drawn-label">new</span>
+        <span v-if="newCardIndices.includes(originalIndex)" class="drawn-label">new</span>
       </div>
     </div>
 

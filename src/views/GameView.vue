@@ -17,9 +17,9 @@ const props = defineProps({
 })
 
 const {
-  myHand, drawnCardIndex, isMyTurn, activePlayerId, canBuy,
+  myHand, newCardIndices, isMyTurn, activePlayerId, canBuy,
   drawFromDeck, takeTopDiscard, discardCard,
-  buy, advanceTurn, layDownContract,
+  buy, advanceTurn, layDownContract, layOff,
 } = useGame(
   computed(() => props.game),
   computed(() => props.gameId),
@@ -44,10 +44,23 @@ const myContractLaid = computed(() =>
   props.game.players[props.playerId]?.contractLaid ?? false
 )
 
+const selectedCard = computed(() =>
+  selectedIndex.value !== null ? myHand.value[selectedIndex.value] : null
+)
+
+const canAttemptLayOff = computed(() =>
+  isMyTurn.value && props.game.phase === 'play' && myContractLaid.value
+)
+
+async function handleLayOff({ pid, groupIndex }) {
+  await layOff(selectedIndex.value, pid, groupIndex)
+  selectedIndex.value = null
+}
+
 function handleDiscard(idx) {
   discardCard(idx)
   selectedIndex.value = null
-  drawnCardIndex.value = null
+  newCardIndices.value = []
 }
 
 async function handleContractConfirm(groupIndices) {
@@ -76,7 +89,12 @@ async function handleContractConfirm(groupIndices) {
     <div class="table">
       <OpponentList :game="game" :playerId="playerId" />
 
-      <MeldDisplay :game="game" />
+      <MeldDisplay
+        :game="game"
+        :selectedCard="selectedCard"
+        :canAttemptLayOff="canAttemptLayOff"
+        @lay-off="handleLayOff"
+      />
 
       <DrawArea
         :deckSize="game.deck.length"
@@ -94,8 +112,8 @@ async function handleContractConfirm(groupIndices) {
       :phase="game.phase"
       :isMyTurn="isMyTurn"
       :contractLaid="myContractLaid"
-      :drawnCardIndex="drawnCardIndex"
-      @select="(i) => { selectedIndex = i; drawnCardIndex = null }"
+      :newCardIndices="newCardIndices"
+      @select="(i) => { selectedIndex = i; newCardIndices.value = [] }"
       @discard="handleDiscard"
       @lay-contract="showContractModal = true"
     />
