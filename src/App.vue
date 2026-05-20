@@ -1,8 +1,9 @@
 <script setup>
 import { useLobby } from './composables/useLobby'
 import LobbyView from './views/LobbyView.vue'
+import GameView from './views/GameView.vue'
 
-const { gameId, playerId, game, createGame, joinGame, startGame, cancelGame, cleanup } = useLobby()
+const { gameId, playerId, game, createGame, joinGame, startGame, cancelGame } = useLobby()
 </script>
 
 <template>
@@ -16,8 +17,11 @@ const { gameId, playerId, game, createGame, joinGame, startGame, cancelGame, cle
     @start="startGame"
     @cancel="cancelGame"
   />
-  <div v-else>
-    <!-- GameView goes here next -->
-    <pre>{{ JSON.stringify(game, null, 2) }}</pre>
-  </div>
+
+  <GameView
+    v-else-if="game.status === 'active'"
+    :game="game"
+    :gameId="gameId"
+    :playerId="playerId"
+  />
 </template>
