@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue'
 import { db } from '../firebase'
-import { doc, updateDoc, runTransaction, serverTimestamp } from 'firebase/firestore'
+import { doc, updateDoc, runTransaction, serverTimestamp, arrayUnion } from 'firebase/firestore'
 import { endRound } from './useRoundEnd'
 import { getRound } from './useRounds'
 
@@ -164,5 +164,12 @@ export function useGame(game, gameId, playerId) {
     await updateDoc(gameRef(), { status: 'finished' })
   }
 
-  return { myHand, newCardIndices, isMyTurn, activePlayerId, canBuy, drawFromDeck, takeTopDiscard, discardCard, buy, advanceTurn, layDownContract, layOff, endGame }
+  async function sendMessage(text) {
+    const name = game.value?.players[playerId.value]?.name ?? 'Player'
+    await updateDoc(gameRef(), {
+      chat: arrayUnion({ pid: playerId.value, name, text, at: Date.now() }),
+    })
+  }
+
+  return { myHand, newCardIndices, isMyTurn, activePlayerId, canBuy, drawFromDeck, takeTopDiscard, discardCard, buy, advanceTurn, layDownContract, layOff, endGame, sendMessage }
 }

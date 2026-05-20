@@ -11,6 +11,7 @@ import ContractModal from '../components/ContractModal.vue'
 import MeldDisplay from '../components/MeldDisplay.vue'
 import RoundEndOverlay from '../components/RoundEndOverlay.vue'
 import ScoreBoard from '../components/ScoreBoard.vue'
+import ChatWindow from '../components/ChatWindow.vue'
 
 const props = defineProps({
   game: Object,
@@ -21,7 +22,7 @@ const props = defineProps({
 const {
   myHand, newCardIndices, isMyTurn, activePlayerId, canBuy,
   drawFromDeck, takeTopDiscard, discardCard,
-  buy, advanceTurn, layDownContract, layOff, endGame,
+  buy, advanceTurn, layDownContract, layOff, endGame, sendMessage,
 } = useGame(
   computed(() => props.game),
   computed(() => props.gameId),
@@ -84,7 +85,9 @@ async function handleContractConfirm(groupIndices) {
       :isMyTurn="isMyTurn"
       :phase="game.phase"
       :showScores="showScores"
+      :isHost="isHost"
       @toggle-scores="showScores = !showScores"
+      @end-game="confirmEndGame = true"
     />
 
     <BuyWindow
@@ -163,7 +166,12 @@ async function handleContractConfirm(groupIndices) {
       </div>
     </Transition>
 
-    <button v-if="isHost" class="end-game-btn" @click="confirmEndGame = true">End Game</button>
+    <ChatWindow
+      :messages="game.chat ?? []"
+      :playerId="playerId"
+      :players="game.players"
+      @send="sendMessage"
+    />
 
     <!-- Mobile only: bottom sheet -->
     <Transition name="fade">
@@ -266,27 +274,6 @@ async function handleContractConfirm(groupIndices) {
   }
 }
 
-.end-game-btn {
-  position: fixed;
-  bottom: 16px;
-  left: 16px;
-  padding: 7px 14px;
-  background: transparent;
-  border: 1.5px solid rgba(192, 57, 43, 0.35);
-  border-radius: 10px;
-  color: rgba(192, 57, 43, 0.6);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.75rem;
-  font-weight: 600;
-  cursor: pointer;
-  z-index: 30;
-  transition: all 0.15s;
-}
-.end-game-btn:hover {
-  border-color: #c0392b;
-  color: #c0392b;
-  background: #fdf0ee;
-}
 
 .end-backdrop {
   position: fixed;

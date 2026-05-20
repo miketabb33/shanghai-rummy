@@ -8,8 +8,9 @@ const props = defineProps({
   isMyTurn: Boolean,
   phase: String,
   showScores: Boolean,
+  isHost: Boolean,
 })
-const emit = defineEmits(['toggle-scores'])
+const emit = defineEmits(['toggle-scores', 'end-game'])
 
 const PHASE_LABELS = { draw: 'Draw', play: 'Play', buy_window: 'Buy?' }
 const phaseLabel = computed(() => PHASE_LABELS[props.phase] ?? null)
@@ -39,6 +40,7 @@ const phaseLabel = computed(() => PHASE_LABELS[props.phase] ?? null)
     </div>
 
     <div class="header-right">
+    <button v-if="isHost" class="end-btn" @click="emit('end-game')">End Game</button>
     <button class="scores-btn" :class="{ active: showScores }" @click="emit('toggle-scores')">
       Scores
     </button>
@@ -49,7 +51,7 @@ const phaseLabel = computed(() => PHASE_LABELS[props.phase] ?? null)
         <template v-if="isMyTurn">Your turn</template>
         <template v-else>{{ activePlayerName }}'s turn</template>
       </span>
-      <span v-if="phaseLabel" class="phase-pill">{{ phaseLabel }}</span>
+      <span v-if="phaseLabel && isMyTurn" class="phase-pill">{{ phaseLabel }}</span>
     </div>
     </div>
   </header>
@@ -158,6 +160,21 @@ const phaseLabel = computed(() => PHASE_LABELS[props.phase] ?? null)
   align-items: center;
   gap: 10px;
 }
+
+.end-btn {
+  padding: 5px 13px;
+  border-radius: 14px;
+  border: 1.5px solid rgba(192, 57, 43, 0.4);
+  background: transparent;
+  color: rgba(192, 57, 43, 0.7);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.03em;
+}
+.end-btn:hover { border-color: #c0392b; color: #c0392b; background: rgba(192,57,43,0.08); }
 
 .scores-btn {
   padding: 5px 13px;
