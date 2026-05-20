@@ -9,6 +9,8 @@ import OpponentList from '../components/OpponentList.vue'
 import BuyWindow from '../components/BuyWindow.vue'
 import ContractModal from '../components/ContractModal.vue'
 import MeldDisplay from '../components/MeldDisplay.vue'
+import RoundEndOverlay from '../components/RoundEndOverlay.vue'
+import ScoreBoard from '../components/ScoreBoard.vue'
 
 const props = defineProps({
   game: Object,
@@ -28,6 +30,7 @@ const {
 
 const selectedIndex = ref(null)
 const showContractModal = ref(false)
+const showScores = ref(false)
 
 const topDiscard = computed(() => {
   const d = props.game.discard
@@ -77,6 +80,8 @@ async function handleContractConfirm(groupIndices) {
       :activePlayerName="activePlayerName"
       :isMyTurn="isMyTurn"
       :phase="game.phase"
+      :showScores="showScores"
+      @toggle-scores="showScores = !showScores"
     />
 
     <BuyWindow
@@ -87,24 +92,32 @@ async function handleContractConfirm(groupIndices) {
       @advance="advanceTurn"
     />
 
-    <div class="table">
-      <OpponentList :game="game" :playerId="playerId" />
+    <!-- Desktop: table + side scoreboard -->
+    <div class="table-area">
+      <div class="table">
+        <OpponentList :game="game" :playerId="playerId" />
 
-      <MeldDisplay
-        :game="game"
-        :selectedCard="selectedCard"
-        :canAttemptLayOff="canAttemptLayOff"
-        @lay-off="handleLayOff"
-      />
+        <MeldDisplay
+          :game="game"
+          :selectedCard="selectedCard"
+          :canAttemptLayOff="canAttemptLayOff"
+          @lay-off="handleLayOff"
+        />
 
-      <DrawArea
-        :deckSize="game.deck.length"
-        :topDiscard="topDiscard"
-        :canDraw="isMyTurn && game.phase === 'draw'"
-        :canTakeDiscard="isMyTurn && game.phase === 'draw' && !!topDiscard"
-        @draw="drawFromDeck"
-        @take-discard="takeTopDiscard"
-      />
+        <DrawArea
+          :deckSize="game.deck.length"
+          :topDiscard="topDiscard"
+          :canDraw="isMyTurn && game.phase === 'draw'"
+          :canTakeDiscard="isMyTurn && game.phase === 'draw' && !!topDiscard"
+          @draw="drawFromDeck"
+          @take-discard="takeTopDiscard"
+        />
+      </div>
+
+      <!-- Non-mobile: floating side card -->
+      <div class="side-scoreboard">
+        <ScoreBoard :game="game" :playerId="playerId" />
+      </div>
     </div>
 
     <PlayerHand
@@ -126,6 +139,25 @@ async function handleContractConfirm(groupIndices) {
       @confirm="handleContractConfirm"
       @close="showContractModal = false"
     />
+
+    <RoundEndOverlay
+      v-if="game.phase === 'round_end'"
+      :game="game"
+      :gameId="gameId"
+      :playerId="playerId"
+    />
+
+    <!-- Mobile only: bottom sheet -->
+    <Transition name="fade">
+      <div v-if="showScores" class="drawer-backdrop" @click="showScores = false" />
+    </Transition>
+
+    <Transition name="sheet">
+      <div v-if="showScores" class="score-sheet">
+        <div class="sheet-handle" @click="showScores = false" />
+        <ScoreBoard :game="game" :playerId="playerId" />
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -138,6 +170,12 @@ async function handleContractConfirm(groupIndices) {
   font-family: 'DM Sans', sans-serif;
 }
 
+.table-area {
+  flex: 1;
+  display: flex;
+  position: relative;
+}
+
 .table {
   flex: 1;
   display: flex;
@@ -147,4 +185,72 @@ async function handleContractConfirm(groupIndices) {
   gap: 8px;
   padding: 16px;
 }
+
+/* Non-mobile (tablet + desktop): side card always visible */
+.side-scoreboard {
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  transform: translateY(-50%);
+}
+
+/* Mobile phones: hide side card */
+@media (max-width: 612px) {
+  .side-scoreboard { display: none; }
+}
+
+/* Non-mobile: hide sheet elements entirely */
+.drawer-backdrop,
+.score-sheet {
+  display: none;
+}
+
+/* Mobile phones: show sheet */
+@media (max-width: 612px) {
+  .drawer-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(26, 26, 46, 0.4);
+    z-index: 40;
+  }
+
+  .score-sheet {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 41;
+    background: #f5efe6;
+    border-radius: 20px 20px 0 0;
+    padding: 12px 20px 32px;
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.18);
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sheet-handle {
+    width: 40px;
+    height: 4px;
+    background: #d5cfc7;
+    border-radius: 2px;
+    margin: 0 auto 16px;
+    cursor: pointer;
+  }
+
+  :deep(.score-sheet .scoreboard) {
+    width: 100%;
+    box-sizing: border-box;
+    border: none;
+    background: transparent;
+    padding: 0;
+  }
+}
+
+.fade-enter-active, .fade-leave-active { transition: opacity 0.25s ease; }
+.fade-enter-from, .fade-leave-to       { opacity: 0; }
+
+.sheet-enter-active, .sheet-leave-active { transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1); }
+.sheet-enter-from, .sheet-leave-to       { transform: translateY(100%); }
 </style>

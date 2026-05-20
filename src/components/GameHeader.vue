@@ -7,10 +7,12 @@ const props = defineProps({
   activePlayerName: String,
   isMyTurn: Boolean,
   phase: String,
+  showScores: Boolean,
 })
+const emit = defineEmits(['toggle-scores'])
 
 const PHASE_LABELS = { draw: 'Draw', play: 'Play', buy_window: 'Buy?' }
-const phaseLabel = computed(() => PHASE_LABELS[props.phase] ?? props.phase)
+const phaseLabel = computed(() => PHASE_LABELS[props.phase] ?? null)
 
 </script>
 
@@ -36,13 +38,19 @@ const phaseLabel = computed(() => PHASE_LABELS[props.phase] ?? props.phase)
       </div>
     </div>
 
+    <div class="header-right">
+    <button class="scores-btn" :class="{ active: showScores }" @click="emit('toggle-scores')">
+      Scores
+    </button>
+
     <div class="turn-info" :class="{ mine: isMyTurn }">
       <span class="turn-dot" />
       <span class="turn-text">
         <template v-if="isMyTurn">Your turn</template>
         <template v-else>{{ activePlayerName }}'s turn</template>
       </span>
-      <span class="phase-pill">{{ phaseLabel }}</span>
+      <span v-if="phaseLabel" class="phase-pill">{{ phaseLabel }}</span>
+    </div>
     </div>
   </header>
 </template>
@@ -145,31 +153,79 @@ const phaseLabel = computed(() => PHASE_LABELS[props.phase] ?? props.phase)
   padding-top: 8px;
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.scores-btn {
+  padding: 5px 13px;
+  border-radius: 14px;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: transparent;
+  color: #9090b8;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.03em;
+}
+.scores-btn:hover { border-color: rgba(255,255,255,0.3); color: #ccc; }
+.scores-btn.active { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.25); color: #fff; }
+
+@media (min-width: 613px) { .scores-btn { display: none; } }
+
 .turn-info {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 12px;
+  padding: 7px 14px;
   border-radius: 20px;
   background: rgba(255,255,255,0.06);
+  transition: background 0.3s, box-shadow 0.3s;
 }
 
-.turn-info.mine { background: rgba(232,194,106,0.15); }
+.turn-info.mine {
+  background: #e8c26a;
+  box-shadow: 0 0 0 3px rgba(232,194,106,0.35), 0 0 20px rgba(232,194,106,0.25);
+  animation: pulse-turn 2s ease-in-out infinite;
+}
+
+@keyframes pulse-turn {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(232,194,106,0.35), 0 0 20px rgba(232,194,106,0.2); }
+  50%       { box-shadow: 0 0 0 5px rgba(232,194,106,0.5), 0 0 28px rgba(232,194,106,0.35); }
+}
 
 .turn-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #555;
+  background: rgba(255,255,255,0.35);
   flex-shrink: 0;
 }
 
 .turn-info.mine .turn-dot {
-  background: #e8c26a;
-  box-shadow: 0 0 6px #e8c26a;
+  background: #1a1a2e;
+  animation: blink 1.1s ease-in-out infinite;
 }
 
-.turn-text { font-size: 0.9rem; font-weight: 500; }
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}
+
+.turn-text {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #ccc;
+}
+
+.turn-info.mine .turn-text {
+  font-weight: 700;
+  color: #1a1a2e;
+}
 
 .phase-pill {
   font-size: 0.65rem;
@@ -180,5 +236,10 @@ const phaseLabel = computed(() => PHASE_LABELS[props.phase] ?? props.phase)
   border-radius: 10px;
   background: rgba(255,255,255,0.1);
   color: #ccc;
+}
+
+.turn-info.mine .phase-pill {
+  background: rgba(26,26,46,0.15);
+  color: #1a1a2e;
 }
 </style>

@@ -1,21 +1,20 @@
 import { db } from '../firebase'
-import { doc, updateDoc } from 'firebase/firestore'
-import { cardPoints } from './useDeck'
-import { buildShuffledDeck, dealHands } from './useDeck'
+import { doc, updateDoc, runTransaction } from 'firebase/firestore'
+import { cardPoints, buildShuffledDeck, dealHands } from './useDeck'
 import { cardsForRound } from './useRounds'
 
 function scoreHands(game) {
-  const roundScores = {}
+  const scores = {}
   for (const pid of game.playerOrder) {
-    roundScores[pid] = (game.hands[pid] ?? []).reduce(
+    scores[pid] = (game.hands[pid] ?? []).reduce(
       (sum, card) => sum + cardPoints(card),
       0,
     )
   }
-  return roundScores
+  return scores
 }
 
-export async function endRound(game, gameId, lastDiscard) {
+export async function endRound(game, gameId, winnerId) {
   const ref = doc(db, 'games', gameId)
   const roundScores = scoreHands(game)
 
@@ -29,30 +28,45 @@ export async function endRound(game, gameId, lastDiscard) {
     return
   }
 
-  const nextRound = game.round + 1
-  const deck = buildShuffledDeck()
-  const hands = dealHands(deck, game.playerOrder, cardsForRound(nextRound))
-  const topCard = deck.pop()
-
-  const playerResets = {}
-  for (const pid of game.playerOrder) {
-    playerResets[`players.${pid}.hasBought`] = false
-    playerResets[`players.${pid}.contractLaid`] = false
-  }
-
-  // Rotate who goes first each round
-  const nextFirst = (game.activePlayerIndex + 1) % game.playerOrder.length
-
   await updateDoc(ref, {
     ...scoreUpdates,
-    ...playerResets,
-    round: game.round + 1,
-    phase: 'draw',
-    activePlayerIndex: nextFirst,
-    deck,
-    hands,
-    discard: [topCard],
-    melds: {},
-    buyWindow: null,
+    phase: 'round_end',
+    roundWinner: winnerId,
+    lastRoundScores: roundScores,
+  })
+}
+
+export async function dealNextRound(game, gameId) {
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(doc(db, 'games', gameId))
+    const data = snap.data()
+    if (data.phase !== 'round_end') return
+
+    const nextRound = data.round + 1
+    const deck = buildShuffledDeck()
+    const hands = dealHands(deck, data.playerOrder, cardsForRound(nextRound))
+    const topCard = deck.pop()
+
+    const playerResets = {}
+    for (const pid of data.playerOrder) {
+      playerResets[`players.${pid}.hasBought`] = false
+      playerResets[`players.${pid}.contractLaid`] = false
+    }
+
+    const nextFirst = (data.activePlayerIndex + 1) % data.playerOrder.length
+
+    tx.update(doc(db, 'games', gameId), {
+      ...playerResets,
+      round: nextRound,
+      phase: 'draw',
+      activePlayerIndex: nextFirst,
+      deck,
+      hands,
+      discard: [topCard],
+      melds: {},
+      buyWindow: null,
+      roundWinner: null,
+      lastRoundScores: null,
+    })
   })
 }

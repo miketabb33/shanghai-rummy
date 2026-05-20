@@ -55,7 +55,7 @@ export function useGame(game, gameId, playerId) {
     const [card] = hand.splice(cardIndex, 1)
 
     if (hand.length === 0) {
-      await endRound(game.value, gameId.value, card)
+      await endRound(game.value, gameId.value, playerId.value)
       return
     }
 
