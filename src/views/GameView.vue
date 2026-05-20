@@ -82,6 +82,7 @@ async function handleContractConfirm(groupIndices) {
     <BuyWindow
       :buyWindow="game.buyWindow"
       :canBuy="canBuy"
+      :hasBought="game.players[playerId]?.hasBought ?? false"
       @buy="buy"
       @advance="advanceTurn"
     />

@@ -19,6 +19,8 @@ export function useGame(game, gameId, playerId) {
   const canBuy = computed(() => {
     if (!game.value || game.value.phase !== 'buy_window') return false
     if (isMyTurn.value) return false
+    const nextIndex = (game.value.activePlayerIndex + 1) % game.value.playerOrder.length
+    if (game.value.playerOrder[nextIndex] === playerId.value) return false
     return !game.value.players[playerId.value]?.hasBought
   })
 
@@ -54,6 +56,25 @@ export function useGame(game, gameId, playerId) {
 
     if (hand.length === 0) {
       await endRound(game.value, gameId.value, card)
+      return
+    }
+
+    const nextIndex = (game.value.activePlayerIndex + 1) % game.value.playerOrder.length
+    const nextPlayerId = game.value.playerOrder[nextIndex]
+    const eligibleBuyers = game.value.playerOrder.filter(pid =>
+      pid !== playerId.value &&
+      pid !== nextPlayerId &&
+      !game.value.players[pid].hasBought
+    )
+
+    if (eligibleBuyers.length === 0) {
+      await updateDoc(gameRef(), {
+        [`hands.${playerId.value}`]: hand,
+        discard: [...game.value.discard, card],
+        activePlayerIndex: nextIndex,
+        phase: 'draw',
+        buyWindow: null,
+      })
       return
     }
 

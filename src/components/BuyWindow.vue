@@ -5,6 +5,7 @@ import { BUY_WINDOW_MS } from '../composables/useGame'
 const props = defineProps({
   buyWindow: Object,
   canBuy: Boolean,
+  hasBought: Boolean,
 })
 const emit = defineEmits(['buy', 'advance'])
 
@@ -50,9 +51,7 @@ onUnmounted(clearTimers)
       <button v-if="canBuy" class="btn-buy" @click="emit('buy')">
         Buy card
       </button>
-      <span v-else class="no-buy">
-        {{ canBuy === false ? 'Already bought this round' : 'Waiting…' }}
-      </span>
+      <span v-else-if="hasBought" class="no-buy">Already bought this round</span>
     </div>
   </Transition>
 </template>
