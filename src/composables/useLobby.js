@@ -10,6 +10,7 @@ import {
   arrayUnion,
 } from 'firebase/firestore'
 import { buildShuffledDeck, dealHands } from './useDeck'
+import { cardsForRound } from './useRounds'
 
 const SESSION_GAME_KEY = 'sr_gameId'
 const SESSION_PLAYER_KEY = 'sr_playerId'
@@ -112,7 +113,7 @@ export function useLobby() {
     const id = gameId.value
     const playerOrder = game.value.playerOrder
     const deck = buildShuffledDeck()
-    const hands = dealHands(deck, playerOrder)
+    const hands = dealHands(deck, playerOrder, cardsForRound(0))
 
     const topCard = deck.pop()
 

@@ -1,11 +1,13 @@
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { db } from '../firebase'
 import { doc, updateDoc, runTransaction, serverTimestamp } from 'firebase/firestore'
+import { endRound } from './useRoundEnd'
 
 export const BUY_WINDOW_MS = 6000
 
 export function useGame(game, gameId, playerId) {
   const myHand = computed(() => game.value?.hands?.[playerId.value] ?? [])
+  const drawnCardIndex = ref(null)
 
   const activePlayerId = computed(() =>
     game.value ? game.value.playerOrder[game.value.activePlayerIndex] : null
@@ -26,6 +28,7 @@ export function useGame(game, gameId, playerId) {
   async function drawFromDeck() {
     const deck = [...game.value.deck]
     const card = deck.pop()
+    drawnCardIndex.value = myHand.value.length
     await updateDoc(gameRef(), {
       deck,
       [`hands.${playerId.value}`]: [...myHand.value, card],
@@ -36,6 +39,7 @@ export function useGame(game, gameId, playerId) {
   async function takeTopDiscard() {
     const discard = [...game.value.discard]
     const card = discard.pop()
+    drawnCardIndex.value = myHand.value.length
     await updateDoc(gameRef(), {
       discard,
       [`hands.${playerId.value}`]: [...myHand.value, card],
@@ -46,6 +50,12 @@ export function useGame(game, gameId, playerId) {
   async function discardCard(cardIndex) {
     const hand = [...myHand.value]
     const [card] = hand.splice(cardIndex, 1)
+
+    if (hand.length === 0) {
+      await endRound(game.value, gameId.value, card)
+      return
+    }
+
     await updateDoc(gameRef(), {
       [`hands.${playerId.value}`]: hand,
       discard: [...game.value.discard, card],
@@ -106,5 +116,5 @@ export function useGame(game, gameId, playerId) {
     })
   }
 
-  return { myHand, isMyTurn, activePlayerId, canBuy, drawFromDeck, takeTopDiscard, discardCard, buy, advanceTurn, layDownContract }
+  return { myHand, drawnCardIndex, isMyTurn, activePlayerId, canBuy, drawFromDeck, takeTopDiscard, discardCard, buy, advanceTurn, layDownContract }
 }

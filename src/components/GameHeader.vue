@@ -11,13 +11,29 @@ const props = defineProps({
 
 const PHASE_LABELS = { draw: 'Draw', play: 'Play', buy_window: 'Buy?' }
 const phaseLabel = computed(() => PHASE_LABELS[props.phase] ?? props.phase)
+
 </script>
 
 <template>
   <header class="game-header">
     <div class="round-info">
       <span class="round-badge">Round {{ round + 1 }} / 11</span>
-      <span class="contract-label">{{ contractLabel }}</span>
+      <div class="contract-wrap">
+        <span class="contract-label">{{ contractLabel }}</span>
+        <div class="tooltip">
+          <div class="tooltip-group">
+            <span class="tooltip-title">Set</span>
+            <span class="tooltip-rule">Same rank, any suit</span>
+            <span class="tooltip-example">7♥  7♦  7♣</span>
+          </div>
+          <div class="tooltip-group">
+            <span class="tooltip-title">Run</span>
+            <span class="tooltip-rule">Consecutive ranks, same suit</span>
+            <span class="tooltip-example">4♥  5♥  6♥  7♥</span>
+          </div>
+          <span class="tooltip-note">★ Jokers are wild</span>
+        </div>
+      </div>
     </div>
 
     <div class="turn-info" :class="{ mine: isMyTurn }">
@@ -58,7 +74,76 @@ const phaseLabel = computed(() => PHASE_LABELS[props.phase] ?? props.phase)
   color: #e8c26a;
 }
 
-.contract-label { font-size: 0.85rem; color: #9090b8; }
+.contract-wrap { position: relative; display: inline-block; }
+
+.contract-label {
+  font-size: 0.85rem;
+  color: #9090b8;
+  cursor: default;
+  border-bottom: 1px dashed #4a4a6a;
+  padding-bottom: 1px;
+}
+
+.tooltip {
+  display: none;
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  background: #fff;
+  color: #1a1a2e;
+  border-radius: 10px;
+  padding: 14px 16px;
+  min-width: 230px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  z-index: 50;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.contract-wrap:hover .tooltip { display: flex; }
+
+.tooltip::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: 16px;
+  width: 10px;
+  height: 10px;
+  background: #fff;
+  transform: rotate(45deg);
+  border-radius: 2px;
+}
+
+.tooltip-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tooltip-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.tooltip-rule {
+  font-size: 0.75rem;
+  color: #888;
+}
+
+.tooltip-example {
+  font-size: 0.82rem;
+  color: #555;
+  letter-spacing: 0.06em;
+}
+
+.tooltip-note {
+  font-size: 0.7rem;
+  color: #aaa;
+  font-style: italic;
+  border-top: 1px solid #f0ebe3;
+  padding-top: 8px;
+}
 
 .turn-info {
   display: flex;

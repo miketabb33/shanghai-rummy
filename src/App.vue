@@ -2,6 +2,7 @@
 import { useLobby } from './composables/useLobby'
 import LobbyView from './views/LobbyView.vue'
 import GameView from './views/GameView.vue'
+import GameOverView from './views/GameOverView.vue'
 
 const { gameId, playerId, game, createGame, joinGame, startGame, cancelGame } = useLobby()
 </script>
@@ -22,6 +23,12 @@ const { gameId, playerId, game, createGame, joinGame, startGame, cancelGame } = 
     v-else-if="game.status === 'active'"
     :game="game"
     :gameId="gameId"
+    :playerId="playerId"
+  />
+
+  <GameOverView
+    v-else-if="game.status === 'finished'"
+    :game="game"
     :playerId="playerId"
   />
 </template>

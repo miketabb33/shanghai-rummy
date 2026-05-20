@@ -13,3 +13,6 @@ export const ROUNDS = [
 ]
 
 export const getRound = (index) => ROUNDS[index]
+
+export const cardsForRound = (index) =>
+  ROUNDS[index].groups.reduce((sum, g) => sum + g.size, 0)

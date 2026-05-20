@@ -8,6 +8,7 @@ import PlayerHand from '../components/PlayerHand.vue'
 import OpponentList from '../components/OpponentList.vue'
 import BuyWindow from '../components/BuyWindow.vue'
 import ContractModal from '../components/ContractModal.vue'
+import MeldDisplay from '../components/MeldDisplay.vue'
 
 const props = defineProps({
   game: Object,
@@ -16,7 +17,7 @@ const props = defineProps({
 })
 
 const {
-  myHand, isMyTurn, activePlayerId, canBuy,
+  myHand, drawnCardIndex, isMyTurn, activePlayerId, canBuy,
   drawFromDeck, takeTopDiscard, discardCard,
   buy, advanceTurn, layDownContract,
 } = useGame(
@@ -46,6 +47,7 @@ const myContractLaid = computed(() =>
 function handleDiscard(idx) {
   discardCard(idx)
   selectedIndex.value = null
+  drawnCardIndex.value = null
 }
 
 async function handleContractConfirm(groupIndices) {
@@ -74,6 +76,8 @@ async function handleContractConfirm(groupIndices) {
     <div class="table">
       <OpponentList :game="game" :playerId="playerId" />
 
+      <MeldDisplay :game="game" />
+
       <DrawArea
         :deckSize="game.deck.length"
         :topDiscard="topDiscard"
@@ -90,7 +94,8 @@ async function handleContractConfirm(groupIndices) {
       :phase="game.phase"
       :isMyTurn="isMyTurn"
       :contractLaid="myContractLaid"
-      @select="selectedIndex = $event"
+      :drawnCardIndex="drawnCardIndex"
+      @select="(i) => { selectedIndex = i; drawnCardIndex = null }"
       @discard="handleDiscard"
       @lay-contract="showContractModal = true"
     />

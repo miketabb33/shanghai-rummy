@@ -11,6 +11,7 @@ const props = defineProps({
   phase: String,
   isMyTurn: Boolean,
   contractLaid: Boolean,
+  drawnCardIndex: { type: Number, default: null },
 })
 const emit = defineEmits(['select', 'discard', 'lay-contract'])
 
@@ -40,14 +41,20 @@ function handleCardClick(originalIndex) {
     </div>
 
     <div class="hand-cards">
-      <CardTile
+      <div
         v-for="{ card, originalIndex } in sortedHand"
         :key="originalIndex"
-        :card="card"
-        :selected="selectedIndex === originalIndex"
-        :interactive="canSelect()"
-        @click="handleCardClick(originalIndex)"
-      />
+        class="card-wrap"
+      >
+        <CardTile
+          :card="card"
+          :selected="selectedIndex === originalIndex"
+          :interactive="canSelect()"
+          :class="{ 'just-drawn': originalIndex === drawnCardIndex }"
+          @click="handleCardClick(originalIndex)"
+        />
+        <span v-if="originalIndex === drawnCardIndex" class="drawn-label">new</span>
+      </div>
     </div>
 
     <div v-if="isMyTurn && phase === 'play'" class="action-bar">
@@ -105,6 +112,29 @@ function handleCardClick(originalIndex) {
   gap: 6px;
   justify-content: center;
   padding-bottom: 8px;
+}
+
+.card-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.drawn-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #e8c26a;
+  margin-top: 3px;
+  line-height: 1;
+}
+
+:deep(.just-drawn) {
+  border-color: #e8c26a;
+  box-shadow: 0 0 0 2px #e8c26a44, 0 4px 12px rgba(0,0,0,0.15);
 }
 
 .action-bar {
