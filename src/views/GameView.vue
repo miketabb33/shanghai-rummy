@@ -7,6 +7,7 @@ import DrawArea from '../components/DrawArea.vue'
 import PlayerHand from '../components/PlayerHand.vue'
 import OpponentList from '../components/OpponentList.vue'
 import BuyWindow from '../components/BuyWindow.vue'
+import ContractModal from '../components/ContractModal.vue'
 
 const props = defineProps({
   game: Object,
@@ -14,34 +15,42 @@ const props = defineProps({
   playerId: String,
 })
 
-const { myHand, isMyTurn, activePlayerId, canBuy, drawFromDeck, takeTopDiscard, discardCard, buy, advanceTurn } =
-  useGame(
-    computed(() => props.game),
-    computed(() => props.gameId),
-    computed(() => props.playerId),
-  )
+const {
+  myHand, isMyTurn, activePlayerId, canBuy,
+  drawFromDeck, takeTopDiscard, discardCard,
+  buy, advanceTurn, layDownContract,
+} = useGame(
+  computed(() => props.game),
+  computed(() => props.gameId),
+  computed(() => props.playerId),
+)
 
 const selectedIndex = ref(null)
+const showContractModal = ref(false)
 
 const topDiscard = computed(() => {
   const d = props.game.discard
   return d.length ? d[d.length - 1] : null
 })
 
-const activePlayerName = computed(() => {
-  const pid = activePlayerId.value
-  return props.game.players[pid]?.name ?? ''
-})
+const activePlayerName = computed(() =>
+  props.game.players[activePlayerId.value]?.name ?? ''
+)
 
 const roundDef = computed(() => getRound(props.game.round))
+
+const myContractLaid = computed(() =>
+  props.game.players[props.playerId]?.contractLaid ?? false
+)
 
 function handleDiscard(idx) {
   discardCard(idx)
   selectedIndex.value = null
 }
 
-function handleBuy() {
-  buy()
+async function handleContractConfirm(groupIndices) {
+  showContractModal.value = false
+  await layDownContract(groupIndices)
 }
 </script>
 
@@ -58,7 +67,7 @@ function handleBuy() {
     <BuyWindow
       :buyWindow="game.buyWindow"
       :canBuy="canBuy"
-      @buy="handleBuy"
+      @buy="buy"
       @advance="advanceTurn"
     />
 
@@ -80,8 +89,18 @@ function handleBuy() {
       :selectedIndex="selectedIndex"
       :phase="game.phase"
       :isMyTurn="isMyTurn"
+      :contractLaid="myContractLaid"
       @select="selectedIndex = $event"
       @discard="handleDiscard"
+      @lay-contract="showContractModal = true"
+    />
+
+    <ContractModal
+      v-if="showContractModal"
+      :hand="myHand"
+      :contractDef="roundDef"
+      @confirm="handleContractConfirm"
+      @close="showContractModal = false"
     />
   </div>
 </template>

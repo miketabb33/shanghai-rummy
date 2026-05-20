@@ -79,6 +79,20 @@ export function useGame(game, gameId, playerId) {
     })
   }
 
+  async function layDownContract(groupIndices) {
+    const pid = playerId.value
+    const hand = myHand.value
+    const allIndices = new Set(groupIndices.flat())
+    const groups = groupIndices.map(indices => indices.map(i => hand[i]))
+    const newHand = hand.filter((_, i) => !allIndices.has(i))
+
+    await updateDoc(gameRef(), {
+      [`hands.${pid}`]: newHand,
+      [`melds.${pid}`]: groups,
+      [`players.${pid}.contractLaid`]: true,
+    })
+  }
+
   async function advanceTurn() {
     await runTransaction(db, async (tx) => {
       const snap = await tx.get(gameRef())
@@ -92,5 +106,5 @@ export function useGame(game, gameId, playerId) {
     })
   }
 
-  return { myHand, isMyTurn, activePlayerId, canBuy, drawFromDeck, takeTopDiscard, discardCard, buy, advanceTurn }
+  return { myHand, isMyTurn, activePlayerId, canBuy, drawFromDeck, takeTopDiscard, discardCard, buy, advanceTurn, layDownContract }
 }
