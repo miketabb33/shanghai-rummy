@@ -1,5 +1,6 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import HowToPlayModal from './HowToPlayModal.vue'
 
 const props = defineProps({
   round: Number,
@@ -14,6 +15,8 @@ const emit = defineEmits(['toggle-scores', 'end-game'])
 
 const PHASE_LABELS = { draw: 'Draw', play: 'Play', buy_window: 'Buy?' }
 const phaseLabel = computed(() => PHASE_LABELS[props.phase] ?? null)
+
+const showHelp = ref(false)
 
 </script>
 
@@ -44,6 +47,7 @@ const phaseLabel = computed(() => PHASE_LABELS[props.phase] ?? null)
     <button class="scores-btn" :class="{ active: showScores }" @click="emit('toggle-scores')">
       Scores
     </button>
+    <button class="help-btn" @click="showHelp = true">?</button>
 
     <div class="turn-info" :class="{ mine: isMyTurn }">
       <span class="turn-dot" />
@@ -55,6 +59,10 @@ const phaseLabel = computed(() => PHASE_LABELS[props.phase] ?? null)
     </div>
     </div>
   </header>
+
+  <Transition name="fade">
+    <HowToPlayModal v-if="showHelp" @close="showHelp = false" />
+  </Transition>
 </template>
 
 <style scoped>
@@ -193,6 +201,27 @@ const phaseLabel = computed(() => PHASE_LABELS[props.phase] ?? null)
 .scores-btn.active { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.25); color: #fff; }
 
 @media (min-width: 613px) { .scores-btn { display: none; } }
+
+.help-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.2);
+  background: transparent;
+  color: #9090b8;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.help-btn:hover { border-color: rgba(255,255,255,0.5); color: #fff; }
+
+.fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
 
 .turn-info {
   display: flex;
