@@ -3,20 +3,19 @@ import { doc, updateDoc, runTransaction } from 'firebase/firestore'
 import { cardPoints, buildShuffledDeck, dealHands } from './useDeck'
 import { cardsForRound } from './useRounds'
 
-function scoreHands(game) {
+function scoreHands(game, winnerId) {
   const scores = {}
   for (const pid of game.playerOrder) {
-    scores[pid] = (game.hands[pid] ?? []).reduce(
-      (sum, card) => sum + cardPoints(card),
-      0,
-    )
+    scores[pid] = pid === winnerId
+      ? 0
+      : (game.hands[pid] ?? []).reduce((sum, card) => sum + cardPoints(card), 0)
   }
   return scores
 }
 
 export async function endRound(game, gameId, winnerId) {
   const ref = doc(db, 'games', gameId)
-  const roundScores = scoreHands(game)
+  const roundScores = scoreHands(game, winnerId)
 
   const scoreUpdates = {}
   for (const pid of game.playerOrder) {
