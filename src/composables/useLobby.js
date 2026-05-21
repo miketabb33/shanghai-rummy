@@ -128,6 +128,7 @@ export function useLobby() {
       deck,
       hands,
       discard: [topCard],
+      turnStartedAt: serverTimestamp(),
     })
   }
 

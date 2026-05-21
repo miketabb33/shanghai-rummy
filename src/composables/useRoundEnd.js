@@ -1,5 +1,5 @@
 import { db } from '../firebase'
-import { doc, updateDoc, runTransaction } from 'firebase/firestore'
+import { doc, updateDoc, runTransaction, serverTimestamp } from 'firebase/firestore'
 import { cardPoints, buildShuffledDeck, dealHands } from './useDeck'
 import { cardsForRound } from './useRounds'
 
@@ -58,6 +58,7 @@ export async function dealNextRound(game, gameId) {
       round: nextRound,
       phase: 'draw',
       activePlayerIndex: nextFirst,
+      turnStartedAt: serverTimestamp(),
       deck,
       hands,
       discard: [topCard],

@@ -163,6 +163,7 @@ async function handleContractConfirm(groupPositions) {
       :phase="game.phase"
       :showScores="showScores"
       :isHost="isHost"
+      :turnStartedAt="game.turnStartedAt ?? null"
       @toggle-scores="showScores = !showScores"
       @end-game="confirmEndGame = true"
     />

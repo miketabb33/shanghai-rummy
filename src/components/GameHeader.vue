@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import HowToPlayModal from './HowToPlayModal.vue'
+import { useTurnTimer } from '../composables/useTurnTimer'
 
 const props = defineProps({
   round: Number,
@@ -10,8 +11,11 @@ const props = defineProps({
   phase: String,
   showScores: Boolean,
   isHost: Boolean,
+  turnStartedAt: { default: null },
 })
 const emit = defineEmits(['toggle-scores', 'end-game'])
+
+const { formattedTime } = useTurnTimer(computed(() => props.turnStartedAt))
 
 const PHASE_LABELS = { draw: 'Draw', play: 'Play', buy_window: 'Buy?' }
 const phaseLabel = computed(() => PHASE_LABELS[props.phase] ?? null)
@@ -56,6 +60,7 @@ const showHelp = ref(false)
         <template v-else>{{ activePlayerName }}'s turn</template>
       </span>
       <span v-if="phaseLabel && isMyTurn" class="phase-pill">{{ phaseLabel }}</span>
+      <span v-if="turnStartedAt" class="turn-timer" :class="{ mine: isMyTurn }">{{ formattedTime }}</span>
     </div>
     </div>
   </header>
@@ -287,5 +292,17 @@ const showHelp = ref(false)
 .turn-info.mine .phase-pill {
   background: rgba(26,26,46,0.15);
   color: #1a1a2e;
+}
+
+.turn-timer {
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  color: rgba(255,255,255,0.45);
+}
+
+.turn-timer.mine {
+  color: rgba(26,26,46,0.5);
 }
 </style>

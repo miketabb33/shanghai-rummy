@@ -1,10 +1,14 @@
 <script setup>
 import { computed } from 'vue'
+import { useTurnTimer } from '../composables/useTurnTimer'
 
 const props = defineProps({
   game: Object,
   playerId: String,
 })
+
+const turnStartedAt = computed(() => props.game.turnStartedAt ?? null)
+const { formattedTime } = useTurnTimer(turnStartedAt)
 
 const opponents = computed(() =>
   props.game.playerOrder
@@ -37,7 +41,10 @@ const opponents = computed(() =>
           <span v-if="op.hasBought" class="tag bought">bought</span>
         </div>
       </div>
-      <span class="card-count">{{ op.cardCount }} cards</span>
+      <div class="right-col">
+        <span class="card-count">{{ op.cardCount }} cards</span>
+        <span v-if="op.isActive" class="turn-timer">{{ formattedTime }}</span>
+      </div>
     </div>
   </div>
 </template>
@@ -116,10 +123,26 @@ const opponents = computed(() =>
 .tag.contract { background: #d1fae5; color: #065f46; }
 .tag.bought   { background: #fee2e2; color: #991b1b; }
 
+.right-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
 .card-count {
   font-family: 'DM Sans', sans-serif;
   font-size: 0.8rem;
   color: #aaa;
   white-space: nowrap;
+}
+
+.turn-timer {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #c8952a;
+  letter-spacing: 0.03em;
 }
 </style>
