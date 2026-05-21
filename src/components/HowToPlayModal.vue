@@ -27,7 +27,7 @@ const ROUNDS = [
       </div>
 
       <div class="htp-section">
-        <div class="htp-label">Buying</div>
+        <div class="htp-label">Buying <span class="htp-label-note">(3+ players)</span></div>
         <p>After each discard, there is a <strong>brief window</strong> where non-next players can register a buy by tapping the discard card. The next player is blocked during this window, then chooses to take the discard (free) or draw from the deck. If they draw, the first player who registered a buy receives the discard plus a penalty card from the deck. You can buy any number of times per round.</p>
       </div>
 
@@ -109,6 +109,12 @@ const ROUNDS = [
   letter-spacing: 0.07em;
   text-transform: uppercase;
   color: #aaa;
+}
+
+.htp-label-note {
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: #c8c0b0;
 }
 
 .htp-section ol, .htp-section p {
