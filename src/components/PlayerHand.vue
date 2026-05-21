@@ -1,9 +1,6 @@
 <script setup>
-import { computed } from 'vue'
 import CardTile from './CardTile.vue'
-import { rankValue } from '../composables/useContractValidator'
-
-const SUIT_ORDER = { S: 0, H: 1, D: 2, C: 3, JK: 4 }
+import Draggable from 'vuedraggable'
 
 const props = defineProps({
   cards: Array,
@@ -13,24 +10,17 @@ const props = defineProps({
   contractLaid: Boolean,
   newCardIndices: { type: Array, default: () => [] },
 })
-const emit = defineEmits(['select', 'discard', 'lay-contract'])
-
-// Sort high→low by rank, suit as tiebreaker, jokers last.
-const sortedHand = computed(() =>
-  props.cards
-    .map((card, originalIndex) => ({ card, originalIndex }))
-    .sort((a, b) => {
-      const rankDiff = rankValue(b.card.rank) - rankValue(a.card.rank)
-      if (rankDiff !== 0) return rankDiff
-      return SUIT_ORDER[a.card.suit] - SUIT_ORDER[b.card.suit]
-    })
-)
+const emit = defineEmits(['select', 'discard', 'lay-contract', 'reorder'])
 
 const canSelect = () => props.isMyTurn && props.phase === 'play'
 
-function handleCardClick(originalIndex) {
+function handleCardClick(i) {
   if (!canSelect()) return
-  emit('select', props.selectedIndex === originalIndex ? null : originalIndex)
+  emit('select', props.selectedIndex === i ? null : i)
+}
+
+function handleReorder(evt) {
+  emit('reorder', { from: evt.oldIndex, to: evt.newIndex })
 }
 </script>
 
@@ -40,22 +30,28 @@ function handleCardClick(originalIndex) {
       Your hand <span class="count">({{ cards.length }})</span>
     </div>
 
-    <div class="hand-cards">
-      <div
-        v-for="{ card, originalIndex } in sortedHand"
-        :key="originalIndex"
-        class="card-wrap"
-      >
-        <CardTile
-          :card="card"
-          :selected="selectedIndex === originalIndex"
-          :interactive="canSelect()"
-          :class="{ 'just-drawn': newCardIndices.includes(originalIndex) }"
-          @click="handleCardClick(originalIndex)"
-        />
-        <span v-if="newCardIndices.includes(originalIndex)" class="drawn-label">new</span>
-      </div>
-    </div>
+    <Draggable
+      :list="cards"
+      item-key="_key"
+      class="hand-cards"
+      ghost-class="card-ghost"
+      chosen-class="card-chosen"
+      animation="150"
+      @end="handleReorder"
+    >
+      <template #item="{ element: card, index: i }">
+        <div class="card-wrap">
+          <CardTile
+            :card="card"
+            :selected="selectedIndex === i"
+            :interactive="canSelect()"
+            :class="{ 'just-drawn': newCardIndices.includes(i) }"
+            @click="handleCardClick(i)"
+          />
+          <span v-if="newCardIndices.includes(i)" class="drawn-label">new</span>
+        </div>
+      </template>
+    </Draggable>
 
     <div v-if="isMyTurn && phase === 'play'" class="action-bar">
       <button
@@ -119,6 +115,19 @@ function handleCardClick(originalIndex) {
   display: flex;
   flex-direction: column;
   align-items: center;
+  cursor: grab;
+}
+
+.card-wrap:active {
+  cursor: grabbing;
+}
+
+:global(.card-ghost) {
+  opacity: 0.3;
+}
+
+:global(.card-chosen) {
+  cursor: grabbing;
 }
 
 .drawn-label {

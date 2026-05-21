@@ -2,9 +2,7 @@
 import { ref, computed } from 'vue'
 import CardTile from './CardTile.vue'
 import ContractGroup from './ContractGroup.vue'
-import { isValidGroup, isValidContract, rankValue } from '../composables/useContractValidator'
-
-const SUIT_ORDER = { S: 0, H: 1, D: 2, C: 3, JK: 4 }
+import { isValidGroup, isValidContract } from '../composables/useContractValidator'
 
 const props = defineProps({
   hand: Array,
@@ -12,21 +10,11 @@ const props = defineProps({
 })
 const emit = defineEmits(['confirm', 'close'])
 
-// groupAssignments[i] = array of hand indices assigned to group i
+// groupAssignments[i] = array of hand positions (into props.hand) assigned to group i
 const groupAssignments = ref(props.contractDef.groups.map(() => []))
 const activeGroupIndex = ref(0)
 
 const assignedIndices = computed(() => new Set(groupAssignments.value.flat()))
-
-const sortedHand = computed(() =>
-  props.hand
-    .map((card, originalIndex) => ({ card, originalIndex }))
-    .sort((a, b) => {
-      const rankDiff = rankValue(b.card.rank) - rankValue(a.card.rank)
-      if (rankDiff !== 0) return rankDiff
-      return SUIT_ORDER[a.card.suit] - SUIT_ORDER[b.card.suit]
-    })
-)
 
 const groupCards = computed(() =>
   groupAssignments.value.map(indices => indices.map(i => props.hand[i]))
@@ -95,16 +83,16 @@ function confirm() {
         <p class="hand-hint">Click cards to assign to the active group</p>
         <div class="hand-cards">
           <div
-            v-for="{ card, originalIndex } in sortedHand"
-            :key="originalIndex"
+            v-for="(card, i) in hand"
+            :key="i"
             class="hand-card-wrap"
-            :class="{ assigned: assignedIndices.has(originalIndex) }"
+            :class="{ assigned: assignedIndices.has(i) }"
           >
             <CardTile
               :card="card"
-              :interactive="!assignedIndices.has(originalIndex)"
+              :interactive="!assignedIndices.has(i)"
               small
-              @click="clickHandCard(originalIndex)"
+              @click="clickHandCard(i)"
             />
           </div>
         </div>

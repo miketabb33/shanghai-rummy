@@ -1,7 +1,8 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useGame } from '../composables/useGame'
 import { getRound } from '../composables/useRounds'
+import { rankValue } from '../composables/useContractValidator'
 import GameHeader from '../components/GameHeader.vue'
 import DrawArea from '../components/DrawArea.vue'
 import PlayerHand from '../components/PlayerHand.vue'
@@ -34,6 +35,79 @@ const showContractModal = ref(false)
 const showScores = ref(false)
 const confirmEndGame = ref(false)
 
+const HAND_SUIT_ORDER = { S: 0, H: 1, D: 2, C: 3, JK: 4 }
+
+function defaultHandOrder(hand) {
+  return hand
+    .map((card, i) => ({ card, i }))
+    .sort((a, b) => {
+      const rankDiff = rankValue(b.card.rank) - rankValue(a.card.rank)
+      if (rankDiff !== 0) return rankDiff
+      return HAND_SUIT_ORDER[a.card.suit] - HAND_SUIT_ORDER[b.card.suit]
+    })
+    .map(({ i }) => i)
+}
+
+// handOrder: Firestore hand indices in user-chosen display order
+const handOrder = ref([])
+
+watch(myHand, (newHand, oldHand) => {
+  const newLen = newHand?.length ?? 0
+  const oldLen = oldHand?.length ?? 0
+
+  if (!oldHand || newLen > oldLen + 2) {
+    handOrder.value = defaultHandOrder(newHand)
+    return
+  }
+
+  if (newLen > oldLen) {
+    const added = Array.from({ length: newLen - oldLen }, (_, k) => oldLen + k)
+    handOrder.value = [...handOrder.value, ...added]
+    return
+  }
+
+  if (newLen < oldLen) {
+    const newHandCopy = newHand.map((card, idx) => ({ suit: card.suit, rank: card.rank, idx, used: false }))
+    const oldToNew = {}
+    for (let oldIdx = 0; oldIdx < oldLen; oldIdx++) {
+      const oldCard = oldHand[oldIdx]
+      const match = newHandCopy.find(
+        item => !item.used && item.suit === oldCard.suit && item.rank === oldCard.rank
+      )
+      if (match) {
+        match.used = true
+        oldToNew[oldIdx] = match.idx
+      }
+    }
+    handOrder.value = handOrder.value
+      .filter(oldIdx => oldToNew[oldIdx] !== undefined)
+      .map(oldIdx => oldToNew[oldIdx])
+  }
+}, { immediate: true })
+
+const orderedHand = computed(() =>
+  handOrder.value
+    .map((fsIdx, pos) => {
+      const card = myHand.value[fsIdx]
+      return card ? { ...card, _key: pos } : null
+    })
+    .filter(Boolean)
+)
+
+const newDisplayIndices = computed(() =>
+  newCardIndices.value
+    .map(fsIdx => handOrder.value.indexOf(fsIdx))
+    .filter(i => i !== -1)
+)
+
+function handleReorder({ from, to }) {
+  const order = [...handOrder.value]
+  const [moved] = order.splice(from, 1)
+  order.splice(to, 0, moved)
+  handOrder.value = order
+  selectedIndex.value = null
+}
+
 const isHost = computed(() => props.game.hostId === props.playerId)
 
 const topDiscard = computed(() => {
@@ -52,7 +126,7 @@ const myContractLaid = computed(() =>
 )
 
 const selectedCard = computed(() =>
-  selectedIndex.value !== null ? myHand.value[selectedIndex.value] : null
+  selectedIndex.value !== null ? orderedHand.value[selectedIndex.value] : null
 )
 
 const canAttemptLayOff = computed(() =>
@@ -60,19 +134,22 @@ const canAttemptLayOff = computed(() =>
 )
 
 async function handleLayOff({ pid, groupIndex }) {
-  await layOff(selectedIndex.value, pid, groupIndex)
+  await layOff(handOrder.value[selectedIndex.value], pid, groupIndex)
   selectedIndex.value = null
 }
 
 function handleDiscard(idx) {
-  discardCard(idx)
+  discardCard(handOrder.value[idx])
   selectedIndex.value = null
   newCardIndices.value = []
 }
 
-async function handleContractConfirm(groupIndices) {
+async function handleContractConfirm(groupPositions) {
   showContractModal.value = false
-  await layDownContract(groupIndices)
+  const groupFirestoreIndices = groupPositions.map(positions =>
+    positions.map(pos => handOrder.value[pos])
+  )
+  await layDownContract(groupFirestoreIndices)
 }
 </script>
 
@@ -127,20 +204,21 @@ async function handleContractConfirm(groupIndices) {
     </div>
 
     <PlayerHand
-      :cards="myHand"
+      :cards="orderedHand"
       :selectedIndex="selectedIndex"
       :phase="game.phase"
       :isMyTurn="isMyTurn"
       :contractLaid="myContractLaid"
-      :newCardIndices="newCardIndices"
+      :newCardIndices="newDisplayIndices"
       @select="(i) => { selectedIndex = i; newCardIndices.value = [] }"
       @discard="handleDiscard"
       @lay-contract="showContractModal = true"
+      @reorder="handleReorder"
     />
 
     <ContractModal
       v-if="showContractModal"
-      :hand="myHand"
+      :hand="orderedHand"
       :contractDef="roundDef"
       @confirm="handleContractConfirm"
       @close="showContractModal = false"
