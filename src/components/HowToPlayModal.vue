@@ -20,14 +20,15 @@ const ROUNDS = [
         <div class="htp-label">On your turn</div>
         <ol>
           <li>Draw a card from the deck or take the top discard.</li>
-          <li>Optionally lay down your contract or lay off on others' melds.</li>
+          <li>Optionally lay down your contract or lay off on others' melds (contract must be laid first).</li>
           <li>Discard one card to end your turn.</li>
         </ol>
+        <p style="padding-left:0; font-size:0.8rem; color:#888; margin-top:4px;">Drag cards in your hand to reorder them.</p>
       </div>
 
       <div class="htp-section">
         <div class="htp-label">Buying</div>
-        <p>When another player discards, eligible players can "buy" that card — they take it plus a penalty card from the deck. You can only buy once per round, and you can't buy if you're next in turn.</p>
+        <p>After each discard, there is a <strong>brief window</strong> where non-next players can register a buy by tapping the discard card. The next player is blocked during this window, then chooses to take the discard (free) or draw from the deck. If they draw, the first player who registered a buy receives the discard plus a penalty card from the deck. You can buy any number of times per round.</p>
       </div>
 
       <div class="htp-section">
