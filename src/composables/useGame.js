@@ -16,37 +16,74 @@ export function useGame(game, gameId, playerId) {
 
   const isMyTurn = computed(() => activePlayerId.value === playerId.value)
 
+  // true when this player can register buy intent (no one has yet, and they're eligible)
   const canBuy = computed(() => {
-    if (!game.value || game.value.phase !== 'buy_window') return false
+    if (!game.value?.canBuyDiscard) return false
+    if (game.value.buyerId) return false  // someone already claimed it
     if (isMyTurn.value) return false
-    const nextIndex = (game.value.activePlayerIndex + 1) % game.value.playerOrder.length
-    if (game.value.playerOrder[nextIndex] === playerId.value) return false
-    return !game.value.players[playerId.value]?.hasBought
+    const discarderIndex = (game.value.activePlayerIndex - 1 + game.value.playerOrder.length) % game.value.playerOrder.length
+    if (game.value.playerOrder[discarderIndex] === playerId.value) return false
+    return true
   })
+
+  const isBuyer = computed(() => game.value?.buyerId === playerId.value)
 
   function gameRef() {
     return doc(db, 'games', gameId.value)
   }
 
   async function drawFromDeck() {
-    const deck = [...game.value.deck]
-    const card = deck.pop()
-    newCardIndices.value = [myHand.value.length]
-    await updateDoc(gameRef(), {
-      deck,
-      [`hands.${playerId.value}`]: [...myHand.value, card],
-      phase: 'play',
+    const pid = playerId.value
+    await runTransaction(db, async (tx) => {
+      const snap = await tx.get(gameRef())
+      const data = snap.data()
+
+      const deck = [...data.deck]
+      const drawnCard = deck.pop()
+
+      const updates = {
+        [`hands.${pid}`]: [...data.hands[pid], drawnCard],
+        phase: 'play',
+        buyWindow: null,
+        canBuyDiscard: false,
+        buyerId: null,
+      }
+
+      if (data.buyerId) {
+        const buyerPid = data.buyerId
+        const discard = [...data.discard]
+        const boughtCard = discard.pop()
+        const penaltyCard = deck.pop()
+        updates.discard = discard
+        updates[`hands.${buyerPid}`] = [...data.hands[buyerPid], boughtCard, penaltyCard]
+      }
+
+      updates.deck = deck
+      newCardIndices.value = [data.hands[pid].length]
+      tx.update(gameRef(), updates)
     })
   }
 
   async function takeTopDiscard() {
-    const discard = [...game.value.discard]
-    const card = discard.pop()
-    newCardIndices.value = [myHand.value.length]
-    await updateDoc(gameRef(), {
-      discard,
-      [`hands.${playerId.value}`]: [...myHand.value, card],
-      phase: 'play',
+    const pid = playerId.value
+    await runTransaction(db, async (tx) => {
+      const snap = await tx.get(gameRef())
+      const data = snap.data()
+      if (data.phase !== 'draw') return
+      if (!data.discard.length) return
+
+      const discard = [...data.discard]
+      const card = discard.pop()
+      newCardIndices.value = [data.hands[pid].length]
+
+      tx.update(gameRef(), {
+        discard,
+        [`hands.${pid}`]: [...data.hands[pid], card],
+        phase: 'play',
+        buyWindow: null,
+        canBuyDiscard: false,
+        buyerId: null,
+      })
     })
   }
 
@@ -62,9 +99,7 @@ export function useGame(game, gameId, playerId) {
     const nextIndex = (game.value.activePlayerIndex + 1) % game.value.playerOrder.length
     const nextPlayerId = game.value.playerOrder[nextIndex]
     const eligibleBuyers = game.value.playerOrder.filter(pid =>
-      pid !== playerId.value &&
-      pid !== nextPlayerId &&
-      !game.value.players[pid].hasBought
+      pid !== playerId.value && pid !== nextPlayerId
     )
 
     if (eligibleBuyers.length === 0) {
@@ -74,6 +109,8 @@ export function useGame(game, gameId, playerId) {
         activePlayerIndex: nextIndex,
         phase: 'draw',
         buyWindow: null,
+        canBuyDiscard: false,
+        buyerId: null,
       })
       return
     }
@@ -81,36 +118,25 @@ export function useGame(game, gameId, playerId) {
     await updateDoc(gameRef(), {
       [`hands.${playerId.value}`]: hand,
       discard: [...game.value.discard, card],
+      activePlayerIndex: nextIndex,
       phase: 'buy_window',
       buyWindow: { openedAt: serverTimestamp() },
+      canBuyDiscard: true,
+      buyerId: null,
     })
   }
 
+  // Register intent to buy — first click wins, button hides for everyone else
   async function buy() {
     const pid = playerId.value
     await runTransaction(db, async (tx) => {
       const snap = await tx.get(gameRef())
       const data = snap.data()
-      if (data.phase !== 'buy_window') return
-      if (data.players[pid].hasBought) return
+      if (!data.canBuyDiscard) return
+      if (!['buy_window', 'draw'].includes(data.phase)) return
+      if (data.buyerId) return  // someone already registered
 
-      const discard = [...data.discard]
-      const topCard = discard.pop()
-      const deck = [...data.deck]
-      const penaltyCard = deck.pop()
-
-      const currentHandLength = data.hands[pid].length
-      newCardIndices.value = [currentHandLength, currentHandLength + 1]
-
-      tx.update(gameRef(), {
-        discard,
-        deck,
-        [`hands.${pid}`]: [...data.hands[pid], topCard, penaltyCard],
-        [`players.${pid}.hasBought`]: true,
-        activePlayerIndex: (data.activePlayerIndex + 1) % data.playerOrder.length,
-        phase: 'draw',
-        buyWindow: null,
-      })
+      tx.update(gameRef(), { buyerId: pid })
     })
   }
 
@@ -147,16 +173,13 @@ export function useGame(game, gameId, playerId) {
     })
   }
 
+  // Timer expired: unblock next player, buying intent still valid
   async function advanceTurn() {
     await runTransaction(db, async (tx) => {
       const snap = await tx.get(gameRef())
       const data = snap.data()
       if (data.phase !== 'buy_window') return
-      tx.update(gameRef(), {
-        activePlayerIndex: (data.activePlayerIndex + 1) % data.playerOrder.length,
-        phase: 'draw',
-        buyWindow: null,
-      })
+      tx.update(gameRef(), { phase: 'draw', buyWindow: null })
     })
   }
 
@@ -171,5 +194,5 @@ export function useGame(game, gameId, playerId) {
     })
   }
 
-  return { myHand, newCardIndices, isMyTurn, activePlayerId, canBuy, drawFromDeck, takeTopDiscard, discardCard, buy, advanceTurn, layDownContract, layOff, endGame, sendMessage }
+  return { myHand, newCardIndices, isMyTurn, activePlayerId, canBuy, isBuyer, drawFromDeck, takeTopDiscard, discardCard, buy, advanceTurn, layDownContract, layOff, endGame, sendMessage }
 }

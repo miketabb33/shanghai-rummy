@@ -48,7 +48,6 @@ export async function dealNextRound(game, gameId) {
 
     const playerResets = {}
     for (const pid of data.playerOrder) {
-      playerResets[`players.${pid}.hasBought`] = false
       playerResets[`players.${pid}.contractLaid`] = false
     }
 
@@ -64,6 +63,8 @@ export async function dealNextRound(game, gameId) {
       discard: [topCard],
       melds: {},
       buyWindow: null,
+      canBuyDiscard: false,
+      buyerId: null,
       roundWinner: null,
       lastRoundScores: null,
     })

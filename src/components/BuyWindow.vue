@@ -5,7 +5,7 @@ import { BUY_WINDOW_MS } from '../composables/useGame'
 const props = defineProps({
   buyWindow: Object,
   canBuy: Boolean,
-  hasBought: Boolean,
+  isBuyer: Boolean,
 })
 const emit = defineEmits(['buy', 'advance'])
 
@@ -43,15 +43,15 @@ onUnmounted(clearTimers)
 
 <template>
   <Transition name="buy-slide">
-    <div v-if="buyWindow" class="buy-banner">
+    <div v-if="buyWindow || canBuy || isBuyer" class="buy-banner">
       <div class="buy-info">
-        <span class="buy-title">Buy opportunity</span>
-        <span class="buy-timer">{{ secondsLeft }}s</span>
+        <span class="buy-title">{{ buyWindow ? 'Deciding…' : 'Buy opportunity' }}</span>
+        <span v-if="buyWindow" class="buy-timer">{{ secondsLeft }}s</span>
       </div>
       <button v-if="canBuy" class="btn-buy" @click="emit('buy')">
-        Buy card
+        Buy
       </button>
-      <span v-else-if="hasBought" class="no-buy">Already bought this round</span>
+      <span v-else-if="isBuyer" class="queued">Buying if drawn ✓</span>
     </div>
   </Transition>
 </template>
@@ -100,11 +100,11 @@ onUnmounted(clearTimers)
 }
 .btn-buy:hover { background: #d4a93c; }
 
-.no-buy {
+.queued {
   font-family: 'DM Sans', sans-serif;
-  font-size: 0.8rem;
-  color: #555;
-  font-style: italic;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #e8c26a;
 }
 
 .buy-slide-enter-active,

@@ -21,7 +21,7 @@ const props = defineProps({
 })
 
 const {
-  myHand, newCardIndices, isMyTurn, activePlayerId, canBuy,
+  myHand, newCardIndices, isMyTurn, activePlayerId, canBuy, isBuyer,
   drawFromDeck, takeTopDiscard, discardCard,
   buy, advanceTurn, layDownContract, layOff, endGame, sendMessage,
 } = useGame(
@@ -170,7 +170,7 @@ async function handleContractConfirm(groupPositions) {
     <BuyWindow
       :buyWindow="game.buyWindow"
       :canBuy="canBuy"
-      :hasBought="game.players[playerId]?.hasBought ?? false"
+      :isBuyer="isBuyer"
       @buy="buy"
       @advance="advanceTurn"
     />
