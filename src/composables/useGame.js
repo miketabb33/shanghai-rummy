@@ -4,7 +4,7 @@ import { doc, updateDoc, runTransaction, serverTimestamp, arrayUnion } from 'fir
 import { endRound } from './useRoundEnd'
 import { getRound } from './useRounds'
 
-export const BUY_WINDOW_MS = 6000
+export const BUY_WINDOW_MS = 4000
 
 export function useGame(game, gameId, playerId) {
   const myHand = computed(() => game.value?.hands?.[playerId.value] ?? [])

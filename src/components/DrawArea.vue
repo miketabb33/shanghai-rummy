@@ -6,8 +6,10 @@ defineProps({
   topDiscard: Object,
   canDraw: Boolean,
   canTakeDiscard: Boolean,
+  canBuy: Boolean,
+  isBuyer: Boolean,
 })
-const emit = defineEmits(['draw', 'take-discard'])
+const emit = defineEmits(['draw', 'take-discard', 'buy'])
 </script>
 
 <template>
@@ -26,13 +28,24 @@ const emit = defineEmits(['draw', 'take-discard'])
     </div>
 
     <div class="pile-slot">
-      <div
-        class="pile discard"
-        :class="{ active: canTakeDiscard }"
-        @click="canTakeDiscard && emit('take-discard')"
-      >
-        <CardTile v-if="topDiscard" :card="topDiscard" :interactive="false" />
-        <span v-else class="empty-label">Empty</span>
+      <div class="discard-wrap">
+        <div
+          class="pile discard"
+          :class="{ active: canTakeDiscard }"
+          @click="canTakeDiscard && emit('take-discard')"
+        >
+          <CardTile v-if="topDiscard" :card="topDiscard" :interactive="false" />
+          <span v-else class="empty-label">Empty</span>
+        </div>
+
+        <button
+          v-if="canBuy"
+          class="buy-overlay"
+          @click.stop="emit('buy')"
+        >
+          Buy
+        </button>
+        <div v-else-if="isBuyer" class="buyer-badge">Buying ✓</div>
       </div>
       <span class="pile-label">Discard</span>
     </div>
@@ -53,6 +66,13 @@ const emit = defineEmits(['draw', 'take-discard'])
   flex-direction: column;
   align-items: center;
   gap: 8px;
+}
+
+.discard-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .pile {
@@ -123,5 +143,43 @@ const emit = defineEmits(['draw', 'take-discard'])
   text-transform: uppercase;
   color: #999;
   font-family: 'DM Sans', sans-serif;
+}
+
+.buy-overlay {
+  position: absolute;
+  bottom: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 14px;
+  background: #e8c26a;
+  color: #1a1a2e;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  transition: background 0.15s, transform 0.1s;
+}
+.buy-overlay:hover {
+  background: #d4a93c;
+  transform: translateX(-50%) translateY(-1px);
+}
+
+.buyer-badge {
+  position: absolute;
+  bottom: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 10px;
+  background: #22c55e;
+  color: #fff;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 20px;
+  white-space: nowrap;
 }
 </style>

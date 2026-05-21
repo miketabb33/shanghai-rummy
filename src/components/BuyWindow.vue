@@ -4,10 +4,8 @@ import { BUY_WINDOW_MS } from '../composables/useGame'
 
 const props = defineProps({
   buyWindow: Object,
-  canBuy: Boolean,
-  isBuyer: Boolean,
 })
-const emit = defineEmits(['buy', 'advance'])
+const emit = defineEmits(['advance'])
 
 const secondsLeft = ref(0)
 let timer = null
@@ -43,15 +41,9 @@ onUnmounted(clearTimers)
 
 <template>
   <Transition name="buy-slide">
-    <div v-if="buyWindow || canBuy || isBuyer" class="buy-banner">
-      <div class="buy-info">
-        <span class="buy-title">{{ buyWindow ? 'Deciding…' : 'Buy opportunity' }}</span>
-        <span v-if="buyWindow" class="buy-timer">{{ secondsLeft }}s</span>
-      </div>
-      <button v-if="canBuy" class="btn-buy" @click="emit('buy')">
-        Buy
-      </button>
-      <span v-else-if="isBuyer" class="queued">Buying if drawn ✓</span>
+    <div v-if="buyWindow" class="buy-banner">
+      <span class="buy-title">Deciding…</span>
+      <span class="buy-timer">{{ secondsLeft }}s</span>
     </div>
   </Transition>
 </template>
@@ -60,16 +52,10 @@ onUnmounted(clearTimers)
 .buy-banner {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 10px 20px;
-  background: #1a1a2e;
-  gap: 16px;
-}
-
-.buy-info {
-  display: flex;
-  align-items: center;
+  justify-content: center;
   gap: 10px;
+  padding: 8px 20px;
+  background: #1a1a2e;
 }
 
 .buy-title {
@@ -84,27 +70,6 @@ onUnmounted(clearTimers)
   font-size: 0.85rem;
   color: #888;
   min-width: 24px;
-}
-
-.btn-buy {
-  padding: 7px 20px;
-  background: #e8c26a;
-  color: #1a1a2e;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.85rem;
-  font-weight: 700;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.btn-buy:hover { background: #d4a93c; }
-
-.queued {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #e8c26a;
 }
 
 .buy-slide-enter-active,

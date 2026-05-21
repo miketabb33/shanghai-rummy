@@ -169,9 +169,6 @@ async function handleContractConfirm(groupPositions) {
 
     <BuyWindow
       :buyWindow="game.buyWindow"
-      :canBuy="canBuy"
-      :isBuyer="isBuyer"
-      @buy="buy"
       @advance="advanceTurn"
     />
 
@@ -192,8 +189,11 @@ async function handleContractConfirm(groupPositions) {
           :topDiscard="topDiscard"
           :canDraw="isMyTurn && game.phase === 'draw'"
           :canTakeDiscard="isMyTurn && game.phase === 'draw' && !!topDiscard"
+          :canBuy="canBuy"
+          :isBuyer="isBuyer"
           @draw="drawFromDeck"
           @take-discard="takeTopDiscard"
+          @buy="buy"
         />
       </div>
 
