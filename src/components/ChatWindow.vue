@@ -47,7 +47,7 @@ const sorted = computed(() => [...props.messages].sort((a, b) => a.at - b.at))
 
 <template>
   <div class="chat" :class="{ open }">
-    <button class="chat-header" @click="toggle">
+    <button class="chat-header" :class="{ 'has-unread': !open && unread > 0 }" @click="toggle">
       <span class="chat-title">Chat</span>
       <span v-if="!open && unread > 0" class="unread-badge">{{ unread }}</span>
       <span class="chevron">{{ open ? '▾' : '▴' }}</span>
@@ -128,6 +128,16 @@ const sorted = computed(() => [...props.messages].sort((a, b) => a.at - b.at))
   padding: 1px 6px;
   min-width: 18px;
   text-align: center;
+  animation: badge-pulse 2s ease-in-out infinite;
+}
+
+@keyframes badge-pulse {
+  0%, 100% { transform: scale(1); box-shadow: none; }
+  50% { transform: scale(1.18); box-shadow: 0 0 8px rgba(232, 194, 106, 0.7); }
+}
+
+.chat-header.has-unread {
+  box-shadow: inset 0 -2px 0 #e8c26a;
 }
 
 .chevron {

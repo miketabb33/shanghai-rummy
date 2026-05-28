@@ -1,4 +1,6 @@
 <script setup>
+import { SUIT_SYMBOL, isRed, displayRank } from '../composables/useDeck'
+
 const props = defineProps({
   card: Object,
   selected: { type: Boolean, default: false },
@@ -6,11 +8,7 @@ const props = defineProps({
   small: { type: Boolean, default: false },
 })
 const emit = defineEmits(['click'])
-
-const SUIT_SYMBOL = { H: '♥', D: '♦', S: '♠', C: '♣', JK: '★' }
-const isRed = (c) => c.suit === 'H' || c.suit === 'D'
 const isJoker = (c) => c.suit === 'JK'
-const displayRank = (c) => c.rank === 'JK' ? 'W' : c.rank
 </script>
 
 <template>

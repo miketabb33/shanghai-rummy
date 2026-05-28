@@ -37,6 +37,10 @@ export function dealHands(deck, playerIds, cardsPerPlayer = 11) {
   return hands
 }
 
+export const SUIT_SYMBOL = { H: '♥', D: '♦', S: '♠', C: '♣', JK: '★' }
+export const isRed = (card) => card.suit === 'H' || card.suit === 'D'
+export const displayRank = (card) => card.rank === 'JK' ? 'W' : card.rank
+
 export function cardPoints(card) {
   if (card.rank === 'JK') return 20
   if (card.rank === 'A') return 15

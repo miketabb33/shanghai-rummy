@@ -23,7 +23,14 @@ export async function endRound(game, gameId, winnerId) {
   }
 
   if (game.round >= 10) {
-    await updateDoc(ref, { ...scoreUpdates, status: 'finished' })
+    await updateDoc(ref, {
+      ...scoreUpdates,
+      status: 'finished',
+      phase: 'round_end',
+      roundWinner: winnerId,
+      lastRoundScores: roundScores,
+      lastRoundMelds: game.melds ?? {},
+    })
     return
   }
 
@@ -32,6 +39,7 @@ export async function endRound(game, gameId, winnerId) {
     phase: 'round_end',
     roundWinner: winnerId,
     lastRoundScores: roundScores,
+    lastRoundMelds: game.melds ?? {},
   })
 }
 
@@ -63,6 +71,7 @@ export async function dealNextRound(game, gameId) {
       hands,
       discard: [topCard],
       melds: {},
+      lastRoundMelds: null,
       buyWindow: null,
       canBuyDiscard: false,
       buyerId: null,

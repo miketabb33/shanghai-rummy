@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { dealNextRound } from '../composables/useRoundEnd'
 import { getRound } from '../composables/useRounds'
+import { SUIT_SYMBOL, isRed, displayRank } from '../composables/useDeck'
 
 const props = defineProps({
   game: Object,
@@ -25,6 +26,17 @@ const standings = computed(() =>
     total: (props.game.scores[pid] ?? []).reduce((s, n) => s + n, 0),
   })).sort((a, b) => a.total - b.total)
 )
+
+const tableByPlayer = computed(() =>
+  props.game.playerOrder
+    .filter(pid => props.game.lastRoundMelds?.[pid]?.length)
+    .map(pid => ({
+      pid,
+      name: props.game.players[pid]?.name ?? pid,
+      melds: props.game.lastRoundMelds[pid],
+    }))
+)
+
 
 async function handleNextRound() {
   await dealNextRound(props.game, props.gameId)
@@ -61,6 +73,23 @@ async function handleNextRound() {
           </tr>
         </tbody>
       </table>
+
+      <div v-if="tableByPlayer.length" class="table-section">
+        <div class="table-section-title">Cards on the Table</div>
+        <div v-for="player in tableByPlayer" :key="player.pid" class="player-melds">
+          <span class="player-label">{{ player.name }}</span>
+          <div class="melds-row">
+            <div v-for="(meld, i) in player.melds" :key="i" class="meld-group">
+              <span
+                v-for="(card, ci) in meld.cards"
+                :key="card.suit + card.rank + ci"
+                class="card-chip"
+                :class="{ red: isRed(card) }"
+              >{{ displayRank(card) }}{{ SUIT_SYMBOL[card.suit] }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div class="footer">
         <button v-if="isHost" class="btn-next" @click="handleNextRound">
@@ -240,5 +269,61 @@ async function handleNextRound() {
   font-size: 0.85rem;
   color: #aaa;
   font-style: italic;
+}
+
+.table-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.table-section-title {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #aaa;
+  border-top: 1.5px solid #e5e0d8;
+  padding-top: 16px;
+}
+
+.player-melds {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.player-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #555;
+}
+
+.melds-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.meld-group {
+  display: flex;
+  gap: 3px;
+  background: #ede8e0;
+  border-radius: 6px;
+  padding: 4px 6px;
+}
+
+.card-chip {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.card-chip.red {
+  color: #c0392b;
 }
 </style>
