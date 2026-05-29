@@ -72,6 +72,7 @@ export async function dealNextRound(game, gameId) {
       discard: [topCard],
       melds: {},
       lastRoundMelds: null,
+      layingContractPid: null,
       buyWindow: null,
       canBuyDiscard: false,
       buyerId: null,

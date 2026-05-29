@@ -23,7 +23,7 @@ const props = defineProps({
 const {
   myHand, newCardIndices, isMyTurn, activePlayerId, canBuy, isBuyer,
   drawFromDeck, takeTopDiscard, discardCard,
-  buy, advanceTurn, layDownContract, layOff, endGame, sendMessage,
+  buy, advanceTurn, setLayingContract, layDownContract, layOff, endGame, sendMessage,
 } = useGame(
   computed(() => props.game),
   computed(() => props.gameId),
@@ -50,13 +50,28 @@ function defaultHandOrder(hand) {
 
 // handOrder: Firestore hand indices in user-chosen display order
 const handOrder = ref([])
+const handOrderKey = `sr_handOrder_${props.gameId}`
+
+watch(handOrder, (order) => {
+  if (order.length > 0) sessionStorage.setItem(handOrderKey, JSON.stringify(order))
+})
+
+function restoreOrDefault(hand) {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(handOrderKey))
+    const n = hand.length
+    if (Array.isArray(saved) && saved.length === n && new Set(saved).size === n && saved.every(i => i >= 0 && i < n))
+      return saved
+  } catch {}
+  return defaultHandOrder(hand)
+}
 
 watch(myHand, (newHand, oldHand) => {
   const newLen = newHand?.length ?? 0
   const oldLen = oldHand?.length ?? 0
 
   if (!oldHand || newLen > oldLen + 2) {
-    handOrder.value = defaultHandOrder(newHand)
+    handOrder.value = restoreOrDefault(newHand)
     return
   }
 
@@ -151,6 +166,16 @@ async function handleContractConfirm(groupPositions) {
   )
   await layDownContract(groupFirestoreIndices)
 }
+
+function openContractModal() {
+  showContractModal.value = true
+  setLayingContract(true)
+}
+
+function closeContractModal() {
+  showContractModal.value = false
+  setLayingContract(false)
+}
 </script>
 
 <template>
@@ -177,7 +202,7 @@ async function handleContractConfirm(groupPositions) {
     <!-- Desktop: table + side scoreboard -->
     <div class="table-area">
       <div class="table">
-        <OpponentList :game="game" :playerId="playerId" :lastDrawSource="game.lastDrawSource ?? null" />
+        <OpponentList :game="game" :playerId="playerId" :lastDrawSource="game.lastDrawSource ?? null" :layingContractPid="game.layingContractPid ?? null" />
 
         <MeldDisplay
           :game="game"
@@ -214,7 +239,7 @@ async function handleContractConfirm(groupPositions) {
       :newCardIndices="newDisplayIndices"
       @select="(i) => { selectedIndex = i; newCardIndices.value = [] }"
       @discard="handleDiscard"
-      @lay-contract="showContractModal = true"
+      @lay-contract="openContractModal"
       @reorder="handleReorder"
     />
 
@@ -223,7 +248,7 @@ async function handleContractConfirm(groupPositions) {
       :hand="orderedHand"
       :contractDef="roundDef"
       @confirm="handleContractConfirm"
-      @close="showContractModal = false"
+      @close="closeContractModal"
     />
 
     <RoundEndOverlay

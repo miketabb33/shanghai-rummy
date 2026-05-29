@@ -112,6 +112,7 @@ export function useGame(game, gameId, playerId) {
         turnStartedAt: serverTimestamp(),
         phase: 'draw',
         lastDrawSource: null,
+        layingContractPid: null,
         buyWindow: null,
         canBuyDiscard: false,
         buyerId: null,
@@ -126,6 +127,7 @@ export function useGame(game, gameId, playerId) {
       turnStartedAt: serverTimestamp(),
       phase: 'buy_window',
       lastDrawSource: null,
+      layingContractPid: null,
       buyWindow: { openedAt: serverTimestamp() },
       canBuyDiscard: true,
       buyerId: null,
@@ -144,6 +146,10 @@ export function useGame(game, gameId, playerId) {
 
       tx.update(gameRef(), { buyerId: pid })
     })
+  }
+
+  async function setLayingContract(active) {
+    await updateDoc(gameRef(), { layingContractPid: active ? playerId.value : null })
   }
 
   async function layDownContract(groupIndices) {
@@ -200,5 +206,5 @@ export function useGame(game, gameId, playerId) {
     })
   }
 
-  return { myHand, newCardIndices, isMyTurn, activePlayerId, canBuy, isBuyer, drawFromDeck, takeTopDiscard, discardCard, buy, advanceTurn, layDownContract, layOff, endGame, sendMessage }
+  return { myHand, newCardIndices, isMyTurn, activePlayerId, canBuy, isBuyer, drawFromDeck, takeTopDiscard, discardCard, buy, advanceTurn, setLayingContract, layDownContract, layOff, endGame, sendMessage }
 }
