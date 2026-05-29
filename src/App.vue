@@ -33,7 +33,7 @@ async function handleJoin(id, playerName) {
   />
 
   <GameView
-    v-else-if="game.status === 'active'"
+    v-else-if="game.status === 'active' || game.phase === 'round_end'"
     :game="game"
     :gameId="gameId"
     :playerId="playerId"

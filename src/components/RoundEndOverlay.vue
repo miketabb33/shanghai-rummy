@@ -1,5 +1,7 @@
 <script setup>
 import { computed } from 'vue'
+import { db } from '../firebase'
+import { doc, updateDoc } from 'firebase/firestore'
 import { dealNextRound } from '../composables/useRoundEnd'
 import { getRound } from '../composables/useRounds'
 import { SUIT_SYMBOL, isRed, displayRank } from '../composables/useDeck'
@@ -38,8 +40,14 @@ const tableByPlayer = computed(() =>
 )
 
 
+const isLastRound = computed(() => props.game.status === 'finished')
+
 async function handleNextRound() {
   await dealNextRound(props.game, props.gameId)
+}
+
+async function handleFinish() {
+  await updateDoc(doc(db, 'games', props.gameId), { phase: null })
 }
 </script>
 
@@ -92,10 +100,17 @@ async function handleNextRound() {
       </div>
 
       <div class="footer">
-        <button v-if="isHost" class="btn-next" @click="handleNextRound">
-          Next Round →
-        </button>
-        <span v-else class="waiting-hint">Waiting for host to deal…</span>
+        <template v-if="isHost">
+          <button v-if="isLastRound" class="btn-next" @click="handleFinish">
+            See Final Scores →
+          </button>
+          <button v-else class="btn-next" @click="handleNextRound">
+            Next Round →
+          </button>
+        </template>
+        <span v-else class="waiting-hint">
+          {{ isLastRound ? 'Waiting for host…' : 'Waiting for host to deal…' }}
+        </span>
       </div>
     </div>
   </div>

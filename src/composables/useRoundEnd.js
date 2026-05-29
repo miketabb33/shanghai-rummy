@@ -30,6 +30,7 @@ export async function endRound(game, gameId, winnerId) {
       roundWinner: winnerId,
       lastRoundScores: roundScores,
       lastRoundMelds: game.melds ?? {},
+      layingContractPid: null,
     })
     return
   }
@@ -40,6 +41,7 @@ export async function endRound(game, gameId, winnerId) {
     roundWinner: winnerId,
     lastRoundScores: roundScores,
     lastRoundMelds: game.melds ?? {},
+    layingContractPid: null,
   })
 }
 

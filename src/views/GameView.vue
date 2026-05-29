@@ -50,15 +50,15 @@ function defaultHandOrder(hand) {
 
 // handOrder: Firestore hand indices in user-chosen display order
 const handOrder = ref([])
-const handOrderKey = `sr_handOrder_${props.gameId}`
+const handOrderKey = computed(() => `sr_handOrder_${props.gameId}_${props.game.round}`)
 
 watch(handOrder, (order) => {
-  if (order.length > 0) sessionStorage.setItem(handOrderKey, JSON.stringify(order))
+  if (order.length > 0) sessionStorage.setItem(handOrderKey.value, JSON.stringify(order))
 })
 
 function restoreOrDefault(hand) {
   try {
-    const saved = JSON.parse(sessionStorage.getItem(handOrderKey))
+    const saved = JSON.parse(sessionStorage.getItem(handOrderKey.value))
     const n = hand.length
     if (Array.isArray(saved) && saved.length === n && new Set(saved).size === n && saved.every(i => i >= 0 && i < n))
       return saved

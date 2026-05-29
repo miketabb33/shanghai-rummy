@@ -25,13 +25,13 @@ function generatePlayerId() {
 }
 
 function saveSession(gid, pid) {
-  sessionStorage.setItem(SESSION_GAME_KEY, gid)
-  sessionStorage.setItem(SESSION_PLAYER_KEY, pid)
+  localStorage.setItem(SESSION_GAME_KEY, gid)
+  localStorage.setItem(SESSION_PLAYER_KEY, pid)
 }
 
 function clearSession() {
-  sessionStorage.removeItem(SESSION_GAME_KEY)
-  sessionStorage.removeItem(SESSION_PLAYER_KEY)
+  localStorage.removeItem(SESSION_GAME_KEY)
+  localStorage.removeItem(SESSION_PLAYER_KEY)
 }
 
 export function useLobby() {
@@ -45,6 +45,7 @@ export function useLobby() {
     unsubscribe = onSnapshot(doc(db, 'games', id), (snap) => {
       if (snap.exists()) {
         game.value = snap.data()
+        if (game.value.status === 'finished') clearSession()
       } else {
         // Game was deleted (host cancelled) — reset everything
         game.value = null
@@ -57,8 +58,8 @@ export function useLobby() {
   }
 
   // Restore session on init
-  const savedGameId = sessionStorage.getItem(SESSION_GAME_KEY)
-  const savedPlayerId = sessionStorage.getItem(SESSION_PLAYER_KEY)
+  const savedGameId = localStorage.getItem(SESSION_GAME_KEY)
+  const savedPlayerId = localStorage.getItem(SESSION_PLAYER_KEY)
   if (savedGameId && savedPlayerId) {
     gameId.value = savedGameId
     playerId.value = savedPlayerId
