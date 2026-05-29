@@ -5,6 +5,7 @@ import { useTurnTimer } from '../composables/useTurnTimer'
 const props = defineProps({
   game: Object,
   playerId: String,
+  lastDrawSource: { type: String, default: null },
 })
 
 const turnStartedAt = computed(() => props.game.turnStartedAt ?? null)
@@ -37,6 +38,9 @@ const opponents = computed(() =>
         <span class="name">{{ op.name }}</span>
         <div class="tags">
           <span v-if="op.isActive" class="tag turn">their turn</span>
+          <span v-if="op.isActive && game.phase === 'play' && lastDrawSource" class="tag draw-source">
+            {{ lastDrawSource === 'deck' ? 'drew deck' : 'took discard' }}
+          </span>
           <span v-if="op.contractLaid" class="tag contract">contract laid</span>
           <span v-if="op.hasBought" class="tag bought">bought</span>
         </div>
@@ -119,9 +123,10 @@ const opponents = computed(() =>
   border-radius: 4px;
 }
 
-.tag.turn     { background: #fef3cd; color: #8a6800; }
-.tag.contract { background: #d1fae5; color: #065f46; }
-.tag.bought   { background: #fee2e2; color: #991b1b; }
+.tag.turn        { background: #fef3cd; color: #8a6800; }
+.tag.draw-source { background: #e0e7ff; color: #3730a3; }
+.tag.contract    { background: #d1fae5; color: #065f46; }
+.tag.bought      { background: #fee2e2; color: #991b1b; }
 
 .right-col {
   display: flex;

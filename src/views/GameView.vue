@@ -161,6 +161,7 @@ async function handleContractConfirm(groupPositions) {
       :activePlayerName="activePlayerName"
       :isMyTurn="isMyTurn"
       :phase="game.phase"
+      :lastDrawSource="game.lastDrawSource ?? null"
       :showScores="showScores"
       :isHost="isHost"
       :turnStartedAt="game.turnStartedAt ?? null"
@@ -176,7 +177,7 @@ async function handleContractConfirm(groupPositions) {
     <!-- Desktop: table + side scoreboard -->
     <div class="table-area">
       <div class="table">
-        <OpponentList :game="game" :playerId="playerId" />
+        <OpponentList :game="game" :playerId="playerId" :lastDrawSource="game.lastDrawSource ?? null" />
 
         <MeldDisplay
           :game="game"

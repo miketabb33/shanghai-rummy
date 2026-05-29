@@ -9,6 +9,7 @@ const props = defineProps({
   activePlayerName: String,
   isMyTurn: Boolean,
   phase: String,
+  lastDrawSource: { type: String, default: null },
   showScores: Boolean,
   isHost: Boolean,
   turnStartedAt: { default: null },
@@ -57,7 +58,12 @@ const showHelp = ref(false)
       <span class="turn-dot" />
       <span class="turn-text">
         <template v-if="isMyTurn">Your turn</template>
-        <template v-else>{{ activePlayerName }}'s turn</template>
+        <template v-else>
+          {{ activePlayerName }}'s turn
+          <span v-if="phase === 'play' && lastDrawSource" class="draw-source">
+            · {{ lastDrawSource === 'deck' ? 'drew' : 'took discard' }}
+          </span>
+        </template>
       </span>
       <span v-if="phaseLabel && isMyTurn" class="phase-pill">{{ phaseLabel }}</span>
       <span v-if="turnStartedAt" class="turn-timer" :class="{ mine: isMyTurn }">{{ formattedTime }}</span>
@@ -292,6 +298,13 @@ const showHelp = ref(false)
 .turn-info.mine .phase-pill {
   background: rgba(26,26,46,0.15);
   color: #1a1a2e;
+}
+
+.draw-source {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.45);
+  white-space: nowrap;
 }
 
 .turn-timer {
